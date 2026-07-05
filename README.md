@@ -9,7 +9,7 @@ Tarım ve hayvancılık sektörü için yapay zeka destekli akıllı bir kredi s
 * **Takım Rolleri:**
   * **Product Owner:** Sadık Gölpek
   * **Scrum Master (İletişim Sorumlusu):** Nihal Metin
-  * **Developer:** 
+  * **Developer:** Gökhan DEMİR
   * **Developer:** 
   * **Developer:** 
 
