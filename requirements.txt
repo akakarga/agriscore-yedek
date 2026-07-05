@@ -1,0 +1,32 @@
+# AgriScore AI - Model & Veri Motoru Gereksinimleri
+# Not: Uygulama arayüzü React/Vite (package.json) kullanmaktadır.
+# Bu dosya, projenin arka planda çalışan Skorlama, Tahmin ve Fırsat motorlarının
+# (Score Engine, Forecast Engine) model eğitimi ve veri analizi süreçlerinde
+# kullanılan Python tabanlı veri bilimi kütüphanelerini listeler.
+
+# --- Temel Veri İşleme & Analiz ---
+pandas==2.2.1          # Zaman serisi süt verilerinin işlenmesi (Data manipulation)
+numpy==1.26.4          # Matematiksel ve istatistiksel hesaplamalar
+scipy==1.12.0          # İleri seviye istatistik ve hipotez testleri
+
+# --- Makine Öğrenmesi & Tahmin Modelleri ---
+scikit-learn==1.4.1    # Üretici güvenilirlik skorlaması ve regresyon modelleri (Score Engine)
+xgboost==2.0.3         # Kredi risk skorlaması için ağaç tabanlı algoritmalar
+statsmodels==0.14.1    # ARIMA vb. zaman serisi analizleri (Forecast Engine)
+prophet==1.1.5         # Meta Prophet ile uzun vadeli süt verimi tahminlemesi
+
+# --- Yapay Zeka Ajanı & LLM (AI Agent Service) ---
+langchain==0.1.13      # Ajan tabanlı LLM senaryo ve hafıza yönetimi
+langchain-openai==0.1.1# OpenAI entegrasyonu ve LLM çağrıları
+chromadb==0.4.24       # LLM için kalıcı vektör hafızası (Vector Database)
+tiktoken==0.6.0        # LLM token hesaplamaları
+
+# --- API & Sunucu (Model Servisleri) ---
+fastapi==0.110.0       # Tahmin modellerini arayüze bağlayan asenkron REST API
+uvicorn==0.29.0        # FastAPI için ASGI sunucu
+pydantic==2.6.4        # API veri doğrulama (Data validation)
+
+# --- Veritabanı & Entegrasyon ---
+sqlalchemy==2.0.29     # PostgreSQL / ilişkisel veritabanı ORM aracı
+psycopg2-binary==2.9.9 # PostgreSQL veritabanı sürücüsü
+python-dotenv==1.0.1   # Ortam değişkenleri ve gizli anahtar yönetimi (.env)
