@@ -222,7 +222,7 @@ Bu proje, modern bir web arayüzü ve yapay zekâ tabanlı analiz motorlarının
 
 4. Tarayıcınızda aşağıdaki adrese giderek uygulamaya erişebilirsiniz:
 
-   [AgriScoreFinTech Canlı Demo](https://akakarga.github.io/agriscore-yedek/)
+   [AgriScoreFinTech Canlı Demo](https://agriscore-yedek-main.vercel.app/)
 
 ---
 
