@@ -22,8 +22,9 @@
 
 |    | <div align="center">İsim</div>   | <div align="center">Rol</div>  | <div align="center">Sosyal Medya</div>     |
 | :-----------: | :---------- | :---------- | :----------: |
-|  👨🏻‍💻  | Sadık Gölpek | Product Owner | [![linkedin](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/sadikgolpek/) |
-|  👩🏻‍💻  | Nihal Metin | Scrum Master / İletişim Sorumlusu | [![linkedin](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/nihal-metin-38b167174/) |
+
+|  👩🏻‍💻  | Nihal Metin | Product Owner| [![linkedin](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/nihal-metin-38b167174/) |
+|  👨🏻‍💻  | Sadık Gölpek |  Scrum Master / İletişim Sorumlusu | [![linkedin](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/sadikgolpek/) |
 |  👨🏻‍💻  | Gökhan Demir | Developer | [![linkedin](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/gokhandem1r/) |
 |  👩🏻‍💻  | Elifnur Demirezen | Developer | [![linkedin](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/elifnur-demirezen-5b535a253?utm_source=share_via&utm_content=profile&utm_medium=member_ios) |
 |  👨🏻‍💻  | Gökçehan Özdemir | Developer | [![linkedin](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/gokcehanozdemir/) |
