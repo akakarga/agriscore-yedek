@@ -384,6 +384,7 @@ def parse_cks(payload: CksPayload):
     }
 
 @app.post("/api/upload-cks-pdf")
+@app.post("/upload-cks-pdf")
 async def upload_cks_pdf(file: UploadFile = File(...)):
     """
     Gerçek bir PDF dosyasını yükler, içindeki metni pypdf ile çıkarır
@@ -518,6 +519,7 @@ async def upload_cks_pdf(file: UploadFile = File(...)):
         }
 
 @app.post("/api/copilot/chat")
+@app.post("/copilot/chat")
 def copilot_chat(payload: ChatPayload):
     """
     Ekrandaki çiftçinin JSON verisini ve kullanıcının mesajını (veya hazır promptunu) alıp 
