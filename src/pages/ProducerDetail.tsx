@@ -53,8 +53,16 @@ const ProducerDetail = () => {
           </div>
         </div>
         <div className="flex items-center space-x-4 print:hidden">
-          <button className="flex items-center px-4 py-2 bg-fin-900 text-white rounded-lg hover:bg-fin-800 font-medium transition-colors shadow-sm">
-            <Brain className="h-4 w-4 mr-2" />
+          <button 
+            onClick={() => {
+              setActiveTab('agent');
+              window.dispatchEvent(new CustomEvent('open-copilot', { 
+                detail: { prompt: `${producer.name} isimli çiftçinin risk, verimlilik ve borç ödeme gücünü canlı olarak analiz et.` } 
+              }));
+            }}
+            className="flex items-center px-4 py-2 bg-fin-900 text-white rounded-lg hover:bg-fin-800 font-medium transition-colors shadow-sm cursor-pointer"
+          >
+            <Brain className="h-4 w-4 mr-2 text-agri-400 animate-pulse" />
             Canlı AI Analizi
           </button>
           <Link to={`/institution/producers/${id}/report`} className="flex items-center px-4 py-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 text-slate-600 font-medium transition-colors">
