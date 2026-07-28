@@ -1,47 +1,50 @@
-# AgriScore AI - Final Teslim Test Listesi (TEST_CHECKLIST.md)
+# Test Checklist
 
-Yarışma final sürümünün sorunsuz, profesyonel ve eksiksiz olduğunu doğrulamak için aşağıdaki adımlar uygulanmış ve başarılı olarak işaretlenmiştir.
+## Otomatik
 
-## 1. Teslim Hijyeni ve Klasör Yapısı
-- [x] Prompt dosyası, çalışma talimatları ve ChatGPT notları teslimden çıkarıldı mı?
-- [x] Tüm `.md` dosyaları BOM'suz UTF-8 kodlamasında mı kaydedildi?
-- [x] `README.md` içerisindeki tüm placeholderlar (TBD, TODO, eklenecek, boş link) temizlendi mi?
-- [x] Jüri / sunum dili ("Demoyu başlat", "Jüri sunum modu") tamamen temizlendi mi?
-- [x] Riskli finansal ifadeler ("Kesin kredi çıkar", "Krediniz onaylandı", "Otomatik karar verir") temizlendi mi?
-- [x] PDF dili ("Gerçek PDF Rapor" yerine "Yazdırılabilir Görünüm") güvenli hale getirildi mi?
+- [x] Skor motoru DSCR korumalı taksit aralığı
+- [x] Sıfır sürüde bölme hatası yok
+- [x] Yerel Co-Pilot gerçek hesap değerini kullanıyor
+- [x] Doğrulanmamış belge fırsat için kabul edilmiyor
+- [x] Portföy stres testi deterministik
+- [x] ÇKS metni alan çıkarıyor ama skor üretmiyor
+- [x] Geçersiz PDF fake success yerine 422
+- [x] OCR gerektiren PDF `TEXT_UNAVAILABLE`
+- [x] Eksik canlı Co-Pilot 503 degraded state
+- [x] Frontend production build
+- [x] Python compile
+- [x] Frontend Co-Pilot niyet ayrımı ve fırsat kural regresyonları
+- [x] Python bağımlılık bütünlüğü (`pip check`)
+- [x] Beş ajanlı konsey aynı girdide deterministik
+- [x] Düşük veri güvenilirliği insan incelemesini zorluyor
+- [x] Karşı-olgusal arama kaynak profili değiştirmiyor
+- [x] SHA-256 karar makbuzu ve beş kayıtlık hafıza sınırı
+- [x] Lazy route production build
 
-## 2. Araştırma ve Konumlandırma
-- [x] `MARKET_RESEARCH.md` yeterli derinlikte (problem, çözüm, alternatif veri pazar etkisi) yazıldı mı?
-- [x] `COMPETITOR_ANALYSIS.md` tablo bazlı ve stratejik kıyaslama içerecek şekilde düzenlendi mi?
-- [x] `POSITIONING_STRATEGY.md` ürünün "Ne Değildir?" ve "Nedir?" sınırlarını net açıklıyor mu?
-- [x] `RESEARCH_SOURCES.md` kaynak/doğrulama/ürün etkisi tablosunu içeriyor mu?
-- [x] `DATA_TRUST_AND_SAFETY.md` KVKK, veri güveni, açık rıza ve karar destek sınırlarını açıklıyor mu?
+## Tarayıcı
 
-## 3. Yeni Şeffaflık Dokümanları
-- [x] `MODEL_CARD.md` var mı ve kullanım sınırlarını belirtiyor mu?
-- [x] `DATA_DICTIONARY.md` var mı ve alan/kaynak doğrulamalarını içeriyor mu?
-- [x] `RESPONSIBLE_AI_RISK_REGISTER.md` var mı ve otomasyon yanılgısını/açıklanabilirliği kapsıyor mu?
-- [x] `ROADMAP.md` var mı ve gelecek entegrasyon vizyonunu listeliyor mu?
+- [x] Kurumsal demo girişi ve dashboard
+- [x] Resmi kaynak kartları ve kaynak URL’leri
+- [ ] ÇKS geçersiz PDF hata görünümü
+- [x] ÇKS metin tabanlı PDF fields-only sonucu ve “Skor üretilmedi” görünümü
+- [x] Co-Pilot yerel mod etiketi ve hesap eşleşmesi
+- [x] Üretici paneli 390x844 mobil menü ve yatay taşma kontrolü
+- [x] Fırsat doğrulama dili ve sentetik program sınırı
+- [x] Tarayıcı konsolunda error/warn yok
+- [x] Kanıt Konseyi P008 orkestrasyon ve beş ajan görünümü
+- [x] Karşı-olgusal yol ve insan incelemesi kapısı
+- [x] SHA-256 makbuz oluşturma, geçmiş ve hafıza temizleme
+- [x] Co-Pilot Kanıt Konseyi bağlamını gerçek hesap sonucu ile açıklıyor
+- [x] P001 güçlü profilde gereksiz karşı-olgusal müdahale yok
+- [x] Kanıt Konseyi 390x844 mobil taşma ve menü kontrolü
 
-## 4. UI/UX Ürün Güçlendirmeleri
-- [x] Veri Güven Merkezi (Data Trust Center) panellerde görünüyor mu?
-- [x] Explainability Panel ("Bu skor neden böyle?") risk ve verim göstergelerinin yanında yer alıyor mu?
-- [x] Başvuruya Hazırlık Skoru, kredi onayı gibi sunulmadan bir rehber olarak eklendi mi?
-- [x] Sigorta Hazırlık Durumu gerçek entegrasyon gibi gösterilmeden risk azaltıcı sinyal olarak verildi mi?
-- [x] Veri Düzeltme Talebi (Data Correction Flow) şeffaflık adına arayüze konuldu mu?
-- [x] Portfolio Stress Test kurumsal panelde deterministik simülasyon olarak eklendi mi?
-- [x] Değerlendirme Politikası Simülatörü karar destek aracı olarak UI'a dahil edildi mi?
+## Release gate
 
-## 5. Kritik Sınırların ve Modüllerin Korunması
-- [x] Kurumsal giriş / Hızlı Demo (Institution) çalışıyor mu?
-- [x] Üretici giriş / Hızlı Demo (Producer) çalışıyor mu?
-- [x] Kurumsal panel (Dashboard) tüm portföyü listeliyor mu?
-- [x] Üretici paneli yalnızca kendi verisini mi görüyor (yetki sızıntısı engellendi mi)?
-- [x] Çıkış yap butonu doğru şekilde login sayfasına yönlendiriyor mu?
-
-## 6. Teknik Geçerlilik
-- [x] `npm install` sorunsuz tamamlanıyor mu?
-- [x] `npm run build` komutu başarıyla geçiyor mu? (Dist klasörü oluşuyor mu?)
-- [x] `npm run lint` komutu 0 hatayla (src klasörü için) geçiyor mu?
-
-> **Tüm maddeler yeşil ve onaylıdır. Ürün "AgriScoreFinTech" takım ismiyle yarışma jürisinin değerlendirmesine hazırdır.**
+- [ ] Bu revizyon public önizlemeye dağıtıldı
+- [ ] Dağıtılan asset hash’i yerel build ile eşleşti
+- [ ] Gerçek auth/RBAC veya açık demo sınırı kabul edildi
+- [ ] Rate limit/audit log kararı verildi
+- [ ] Erişilebilirlik ve mobil cihaz testi tamamlandı
+- [ ] `npm audit` temiz veya kabul edilmiş/yazılı RSC advisory risk kararı mevcut
+- [ ] 3 dakikalık video gizli sekmede erişilebilir ve süre sınırında
+- [ ] Public GitHub, sprint kanıtları ve başvuru formu tamamlandı

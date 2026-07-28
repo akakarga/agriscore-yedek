@@ -1,5 +1,5 @@
 import { useMemo, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link } from 'react-router';
 import { producers } from '../data/seedData';
 import { calculateAgriScore } from '../services/scoreEngine';
 import { calculateForecast } from '../services/forecastEngine';
@@ -31,7 +31,16 @@ const Report = () => {
   }
 
   const { producer, score, aiReport } = data;
-  const formatCurrency = (val: number) => new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY', maximumFractionDigits: 0 }).format(val);
+  const formatCurrency = (val: number | null) => val === null
+    ? 'Bilinmiyor'
+    : new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY', maximumFractionDigits: 0 }).format(val);
+  const netCashAfterDebt = producer.financials.monthlyOtherCosts === null
+    || producer.financials.currentLoanInstallments === null
+    ? null
+    : producer.financials.monthlyMilkRevenue
+      - producer.financials.monthlyFeedCost
+      - producer.financials.monthlyOtherCosts
+      - producer.financials.currentLoanInstallments;
 
   return (
     <div className="bg-white min-h-screen text-slate-900 font-sans">
@@ -58,7 +67,7 @@ const Report = () => {
             <Wheat className="w-10 h-10 text-fin-900 mr-3" />
             <div>
               <h1 className="text-2xl font-black text-fin-900 tracking-tight">AgriScore Kurumsal Rapor</h1>
-              <p className="text-sm text-slate-500 font-medium tracking-wide uppercase">AI Destekli Finansal Analiz</p>
+              <p className="text-sm text-slate-500 font-medium tracking-wide uppercase">Finansal ve Üretim Değerlendirmesi</p>
             </div>
           </div>
           <div className="text-right text-sm text-slate-600">
@@ -84,14 +93,15 @@ const Report = () => {
           </div>
           <div className="w-64 bg-slate-50 rounded-xl border border-slate-200 p-4 flex flex-col items-center justify-center">
             <div className="text-sm font-bold text-slate-500 uppercase tracking-widest mb-1">Risk Skoru</div>
-            <div className={`text-5xl font-black ${score.overallScore >= 75 ? 'text-green-600' : score.overallScore >= 50 ? 'text-yellow-600' : 'text-red-600'}`}>
-              {score.overallScore}
+            <div className={`text-5xl font-black ${score.overallScore === null ? 'text-slate-400' : score.overallScore >= 75 ? 'text-green-600' : score.overallScore >= 50 ? 'text-yellow-600' : 'text-red-600'}`}>
+              {score.overallScore ?? '—'}
             </div>
             <div className={`mt-2 px-3 py-1 rounded-full text-xs font-bold ${
+              score.riskLevel === null ? 'bg-slate-200 text-slate-700' :
               score.riskLevel === 'Düşük' ? 'bg-green-100 text-green-800' :
               score.riskLevel === 'Orta' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'
             }`}>
-              {score.riskLevel} RİSK
+              {score.riskLevel === null ? 'EKSİK BİLGİ' : `${score.riskLevel} RİSK`}
             </div>
           </div>
         </div>
@@ -111,20 +121,25 @@ const Report = () => {
               <div key={item.label} className="text-sm">
                 <div className="flex justify-between mb-1">
                   <span className="text-slate-600 font-medium">{item.label}</span>
-                  <span className="font-bold text-fin-900">{item.value}/100</span>
+                  <span className="font-bold text-fin-900">
+                    {item.value === null ? '—' : `${item.value}/100`}
+                  </span>
                 </div>
                 <div className="w-full bg-slate-100 rounded-full h-1.5">
-                  <div className={`h-1.5 rounded-full ${item.value >= 75 ? 'bg-green-500' : item.value >= 40 ? 'bg-yellow-500' : 'bg-red-500'}`} style={{ width: `${item.value}%` }}></div>
+                  <div
+                    className={`h-1.5 rounded-full ${item.value === null ? 'bg-slate-300' : item.value >= 75 ? 'bg-green-500' : item.value >= 40 ? 'bg-yellow-500' : 'bg-red-500'}`}
+                    style={{ width: `${item.value ?? 0}%` }}
+                  ></div>
                 </div>
               </div>
             ))}
           </div>
         </div>
 
-        {/* AI Analysis */}
+        {/* Decision support summary */}
         <div className="mb-8 bg-slate-50 border border-slate-200 rounded-xl p-6">
           <h2 className="text-lg font-bold text-fin-900 mb-3 flex items-center">
-            <Brain className="w-5 h-5 mr-2" /> AI Karar Destek Özeti
+            <Brain className="w-5 h-5 mr-2" /> Dosya Değerlendirme Özeti
           </h2>
           <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">{aiReport.summary}</p>
           
@@ -151,13 +166,16 @@ const Report = () => {
               <div className="border border-slate-200 p-4 rounded-lg">
                  <div className="text-xs text-slate-500 font-medium mb-1">Mevcut Net Nakit Akışı (Aylık)</div>
                  <div className="text-lg font-bold text-fin-900">
-                   {formatCurrency(producer.financials.monthlyMilkRevenue - producer.financials.monthlyFeedCost - producer.financials.monthlyOtherCosts - producer.financials.currentLoanInstallments)}
+                   {formatCurrency(netCashAfterDebt)}
                  </div>
               </div>
               <div className="border border-slate-200 p-4 rounded-lg">
                  <div className="text-xs text-slate-500 font-medium mb-1">Güvenli Taksit Aralığı</div>
                  <div className="text-lg font-bold text-agri-700">
-                   {formatCurrency(score.safeInstallmentRange.min)} - {formatCurrency(score.safeInstallmentRange.max)}
+                   {score.safeInstallmentRange.min === null
+                     || score.safeInstallmentRange.max === null
+                     ? 'Veri tamamlanmalı'
+                     : `${formatCurrency(score.safeInstallmentRange.min)} - ${formatCurrency(score.safeInstallmentRange.max)}`}
                  </div>
               </div>
               <div className="border border-slate-200 p-4 rounded-lg">
@@ -169,10 +187,34 @@ const Report = () => {
            </div>
         </div>
 
+        {/* Credit Committee Signatures & Decision Block */}
+        <div className="mb-8 border border-slate-300 rounded-xl p-5 bg-slate-50/50 print:break-inside-avoid">
+          <h3 className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-4 border-b border-slate-200 pb-1">
+            Kredi Komitesi Değerlendirme & Onay Alanı
+          </h3>
+          <div className="grid grid-cols-3 gap-6 text-center text-xs">
+            <div className="border-r border-slate-200 pr-4">
+              <div className="font-bold text-fin-900 mb-1">Uzman Değerlendirmesi</div>
+              <div className="text-slate-500 mb-6">İnceleme Tamamlandı</div>
+              <div className="border-t border-dashed border-slate-300 pt-1 text-[10px] text-slate-400">İmza / Tarih</div>
+            </div>
+            <div className="border-r border-slate-200 pr-4">
+              <div className="font-bold text-fin-900 mb-1">Risk Yönetimi Onayı</div>
+              <div className="text-slate-500 mb-6">Uygun / Şartlı Uygun</div>
+              <div className="border-t border-dashed border-slate-300 pt-1 text-[10px] text-slate-400">İmza / Tarih</div>
+            </div>
+            <div>
+              <div className="font-bold text-fin-900 mb-1">Komite Kararı</div>
+              <div className="text-slate-500 mb-6">Nihai Onay</div>
+              <div className="border-t border-dashed border-slate-300 pt-1 text-[10px] text-slate-400">İmza / Tarih</div>
+            </div>
+          </div>
+        </div>
+
         {/* Footer / Disclaimer */}
-        <div className="mt-12 pt-6 border-t border-slate-300 text-xs text-slate-500 text-center print:break-inside-avoid">
-          <p className="font-bold mb-1">YASAL UYARI</p>
-          <p>AgriScore AI bir karar destek aracıdır ve bu rapor nihai bir kredi onayı veya yatırım tavsiyesi niteliği taşımaz. Rapor içerisindeki veriler sağlanan dökümanlar ve bölgesel istatistikler kullanılarak matematiksel modellerle üretilmiştir. Kesin kararlar için yerinde tespit ve yetkili merci onayı gereklidir.</p>
+        <div className="mt-8 pt-4 border-t border-slate-300 text-[11px] text-slate-500 text-center print:break-inside-avoid">
+          <p className="font-bold mb-1">YASAL UYARI VE GİZLİLİK</p>
+          <p>AgriScore mevcut kayıtlara dayalı bir karar destek raporudur. Bu rapor tek başına nihai kredi taahhüdü veya onay garantisi yerine geçmez. Bilgiler yalnızca yetkili kurum kullanımı içindir.</p>
         </div>
         
       </div>

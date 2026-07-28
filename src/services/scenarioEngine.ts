@@ -9,11 +9,15 @@ export type ScenarioType =
 
 export function calculateScenario(producer: Producer, scenario: ScenarioType): ScenarioResult {
   let newMonthlyRevenue = producer.financials.monthlyMilkRevenue;
-  let newMonthlyExpenses = producer.financials.monthlyFeedCost + producer.financials.monthlyOtherCosts;
+  let newMonthlyExpenses = producer.financials.monthlyOtherCosts === null
+    ? null
+    : producer.financials.monthlyFeedCost + producer.financials.monthlyOtherCosts;
   let simulatedAdditionalInstallment = 0;
   
   if (scenario === 'Yem Maliyeti %15 Artarsa') {
-    newMonthlyExpenses = (producer.financials.monthlyFeedCost * 1.15) + producer.financials.monthlyOtherCosts;
+    newMonthlyExpenses = producer.financials.monthlyOtherCosts === null
+      ? null
+      : (producer.financials.monthlyFeedCost * 1.15) + producer.financials.monthlyOtherCosts;
   } else if (scenario === 'Süt Fiyatı %10 Düşerse' || scenario === 'Üretim %10 Düşerse') {
     newMonthlyRevenue = producer.financials.monthlyMilkRevenue * 0.90;
   } else if (scenario === 'Yeni Kredi Taksiti Eklenirse') {
@@ -21,16 +25,28 @@ export function calculateScenario(producer: Producer, scenario: ScenarioType): S
     simulatedAdditionalInstallment = (producer.financials.requestedLoanAmount * 1.4) / 24;
   }
 
-  const operatingIncome = newMonthlyRevenue - newMonthlyExpenses;
-  const totalDebtService = producer.financials.currentLoanInstallments + simulatedAdditionalInstallment;
-  const newNetCashFlow = operatingIncome - totalDebtService;
+  const operatingIncome = newMonthlyExpenses === null
+    ? null
+    : newMonthlyRevenue - newMonthlyExpenses;
+  const totalDebtService = producer.financials.currentLoanInstallments === null
+    ? null
+    : producer.financials.currentLoanInstallments + simulatedAdditionalInstallment;
+  const newNetCashFlow = operatingIncome === null || totalDebtService === null
+    ? null
+    : operatingIncome - totalDebtService;
   
-  const newDscr = totalDebtService > 0 ? operatingIncome / totalDebtService : 999;
+  const newDscr = operatingIncome === null || totalDebtService === null
+    ? null
+    : totalDebtService > 0
+      ? operatingIncome / totalDebtService
+      : 999;
 
   let riskImpact = 'Değişim Yok';
   let scoreImpact = 0;
 
-  if (newDscr < 1.0) {
+  if (newDscr === null) {
+    riskImpact = 'Veri Tamamlanmalı';
+  } else if (newDscr < 1.0) {
     riskImpact = 'Kritik Risk (Nakit Akışı Negatif)';
     scoreImpact = -20;
   } else if (newDscr < 1.25) {
@@ -42,13 +58,25 @@ export function calculateScenario(producer: Producer, scenario: ScenarioType): S
   }
 
   // Baseline comparison
-  const baselineNetCashFlow = producer.financials.monthlyMilkRevenue - (producer.financials.monthlyFeedCost + producer.financials.monthlyOtherCosts) - producer.financials.currentLoanInstallments;
-  if (newNetCashFlow < baselineNetCashFlow && newDscr >= 1.25) {
+  const baselineNetCashFlow = producer.financials.monthlyOtherCosts === null
+    || producer.financials.currentLoanInstallments === null
+    ? null
+    : producer.financials.monthlyMilkRevenue
+      - producer.financials.monthlyFeedCost
+      - producer.financials.monthlyOtherCosts
+      - producer.financials.currentLoanInstallments;
+  if (
+    newNetCashFlow !== null
+    && baselineNetCashFlow !== null
+    && newNetCashFlow < baselineNetCashFlow
+    && newDscr !== null
+    && newDscr >= 1.25
+  ) {
      riskImpact = 'Hafif Etki (Toleranslı)';
      scoreImpact = -2;
   }
 
-  if (scenario === 'Mevcut Durum') {
+  if (scenario === 'Mevcut Durum' && newDscr !== null) {
     riskImpact = 'Baz Senaryo';
     scoreImpact = 0;
   }

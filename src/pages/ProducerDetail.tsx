@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link } from 'react-router';
 import { producers } from '../data/seedData';
 import { calculateAgriScore } from '../services/scoreEngine';
 import { calculateForecast } from '../services/forecastEngine';
@@ -8,7 +8,7 @@ import { calculateScenario } from '../services/scenarioEngine';
 import type { ScenarioType } from '../services/scenarioEngine';
 import { opportunities } from '../data/seedData';
 import { calculateOpportunityMatch } from '../services/opportunityEngine';
-import { ArrowLeft, Brain, LineChart as LineChartIcon, PieChart as PieChartIcon, Activity, Printer, CheckCircle, XCircle, AlertTriangle, FileText, GitCompare, FileCheck, FileMinus, FileQuestion, GraduationCap } from 'lucide-react';
+import { ArrowLeft, Brain, BrainCircuit, LineChart as LineChartIcon, PieChart as PieChartIcon, Activity, Printer, CheckCircle, XCircle, AlertTriangle, FileText, GitCompare, FileCheck, FileMinus, FileQuestion, GraduationCap } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 
 const ProducerDetail = () => {
@@ -37,7 +37,16 @@ const ProducerDetail = () => {
   }
 
   const { producer, score, forecast, aiReport, scenarioResult, opportunityMatches } = data;
-  const formatCurrency = (val: number) => new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY', maximumFractionDigits: 0 }).format(val);
+  const formatCurrency = (val: number | null) => val === null
+    ? 'Bilinmiyor'
+    : new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY', maximumFractionDigits: 0 }).format(val);
+  const netCashAfterDebt = producer.financials.monthlyOtherCosts === null
+    || producer.financials.currentLoanInstallments === null
+    ? null
+    : producer.financials.monthlyMilkRevenue
+      - producer.financials.monthlyFeedCost
+      - producer.financials.monthlyOtherCosts
+      - producer.financials.currentLoanInstallments;
 
   return (
     <div className="space-y-6 print:space-y-4">
@@ -53,18 +62,13 @@ const ProducerDetail = () => {
           </div>
         </div>
         <div className="flex items-center space-x-4 print:hidden">
-          <button 
-            onClick={() => {
-              setActiveTab('agent');
-              window.dispatchEvent(new CustomEvent('open-copilot', { 
-                detail: { prompt: `${producer.name} isimli çiftçinin risk, verimlilik ve borç ödeme gücünü canlı olarak analiz et.` } 
-              }));
-            }}
+          <Link
+            to={`/institution/decision-room/${producer.id}`}
             className="flex items-center px-4 py-2 bg-fin-900 text-white rounded-lg hover:bg-fin-800 font-medium transition-colors shadow-sm cursor-pointer"
           >
-            <Brain className="h-4 w-4 mr-2 text-agri-400 animate-pulse" />
-            Canlı AI Analizi
-          </button>
+            <BrainCircuit className="h-4 w-4 mr-2 text-agri-400" />
+            Dosyayı Değerlendir
+          </Link>
           <Link to={`/institution/producers/${id}/report`} className="flex items-center px-4 py-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 text-slate-600 font-medium transition-colors">
             <Printer className="h-4 w-4 mr-2" />
             Kurumsal Rapor
@@ -77,18 +81,19 @@ const ProducerDetail = () => {
         <div className="flex flex-wrap items-center gap-6">
           <div className="text-center">
             <div className="text-sm font-medium text-slate-500 mb-1">AgriScore Risk Skoru</div>
-            <div className={`text-4xl font-extrabold ${score.overallScore >= 75 ? 'text-green-600' : score.overallScore >= 50 ? 'text-yellow-600' : 'text-red-600'}`}>
-              {score.overallScore}
+            <div className={`text-4xl font-extrabold ${score.overallScore === null ? 'text-slate-400' : score.overallScore >= 75 ? 'text-green-600' : score.overallScore >= 50 ? 'text-yellow-600' : 'text-red-600'}`}>
+              {score.overallScore ?? '—'}
             </div>
           </div>
           <div className="h-12 w-px bg-slate-200 hidden md:block"></div>
           <div>
             <div className="text-sm font-medium text-slate-500 mb-1">Risk Seviyesi</div>
             <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-bold ${
+              score.riskLevel === null ? 'bg-slate-100 text-slate-700' :
               score.riskLevel === 'Düşük' ? 'bg-green-100 text-green-800' :
               score.riskLevel === 'Orta' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'
             }`}>
-              {score.riskLevel}
+              {score.riskLevel ?? 'Eksik Bilgi'}
             </span>
           </div>
           <div className="h-12 w-px bg-slate-200 hidden md:block"></div>
@@ -120,7 +125,7 @@ const ProducerDetail = () => {
         {score.reliabilityResult.score < 80 && (
           <div className="flex items-center text-orange-700 bg-orange-50 p-3 rounded-lg border border-orange-200 max-w-sm print:max-w-none">
             <AlertTriangle className="h-5 w-5 mr-2 flex-shrink-0" />
-            <span className="text-xs font-medium">Veri güvenilirliği düşük. Skor ihtiyatlı hesaplanmıştır.</span>
+            <span className="text-xs font-medium">Veri güvenilirliği düşük. Eksikler tamamlanmadan sonuçlar doğrulanmış sayılmaz.</span>
           </div>
         )}
       </div>
@@ -133,9 +138,9 @@ const ProducerDetail = () => {
             { id: 'forecast', label: 'Verim Tahmini', icon: LineChartIcon },
             { id: 'financials', label: 'Nakit & Sürü', icon: PieChartIcon },
             { id: 'sources', label: 'Veri Güven Merkezi', icon: FileText },
-            { id: 'scenario', label: 'Senaryo Analizi', icon: GitCompare },
+            { id: 'scenario', label: 'Değişen Koşullar', icon: GitCompare },
             { id: 'opportunities', label: 'Uygun Destekler', icon: GraduationCap },
-            { id: 'agent', label: 'AI Risk Raporu', icon: Brain },
+            { id: 'agent', label: 'Karar Açıklaması', icon: Brain },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -174,10 +179,13 @@ const ProducerDetail = () => {
                   <div key={item.label}>
                     <div className="flex justify-between text-sm mb-1">
                       <span className="text-slate-600 font-medium">{item.label}</span>
-                      <span className="text-fin-900 font-bold">{item.value}</span>
+                      <span className="text-fin-900 font-bold">{item.value ?? '—'}</span>
                     </div>
                     <div className="w-full bg-slate-100 rounded-full h-2.5">
-                      <div className={`h-2.5 rounded-full ${item.value >= 75 ? 'bg-green-500' : item.value >= 40 ? 'bg-yellow-500' : 'bg-red-500'}`} style={{ width: `${item.value}%` }}></div>
+                      <div
+                        className={`h-2.5 rounded-full ${item.value === null ? 'bg-slate-300' : item.value >= 75 ? 'bg-green-500' : item.value >= 40 ? 'bg-yellow-500' : 'bg-red-500'}`}
+                        style={{ width: `${item.value ?? 0}%` }}
+                      ></div>
                     </div>
                   </div>
                 ))}
@@ -189,7 +197,10 @@ const ProducerDetail = () => {
               <h3 className="text-lg font-bold text-fin-900 mb-2">Güvenli Taksit Kapasitesi</h3>
               <p className="text-sm text-slate-500 mb-6">Mevcut net nakit akışına göre aylık önerilen maksimum taksit aralığı.</p>
               <div className="text-3xl font-extrabold text-agri-600">
-                {formatCurrency(score.safeInstallmentRange.min)} - {formatCurrency(score.safeInstallmentRange.max)}
+                {score.safeInstallmentRange.min === null
+                  || score.safeInstallmentRange.max === null
+                  ? 'Veri tamamlanmalı'
+                  : `${formatCurrency(score.safeInstallmentRange.min)} - ${formatCurrency(score.safeInstallmentRange.max)}`}
               </div>
               <p className="text-xs text-slate-400 mt-4">* Bu bir karar destek metriğidir. Kesin onay anlamına gelmez.</p>
             </div>
@@ -201,14 +212,21 @@ const ProducerDetail = () => {
               </h3>
               <p className="text-sm text-slate-600 mb-4"><strong>Bu skor neden böyle hesaplandı?</strong></p>
               <ul className="text-sm text-slate-700 space-y-3">
-                <li className="flex items-start">
-                  <span className="text-green-600 mr-2">↑</span>
-                  <span><strong>Nakit Akışı Güçlü:</strong> Aylık süt geliri, giderleri istikrarlı bir şekilde karşılıyor.</span>
-                </li>
+                {score.subScores.cashflowStrength === null ? (
+                  <li className="flex items-start">
+                    <span className="text-orange-600 mr-2">!</span>
+                    <span><strong>Nakit Akışı Hesaplanamadı:</strong> Eksik gider bilgileri tamamlanmalı.</span>
+                  </li>
+                ) : score.subScores.cashflowStrength >= 75 ? (
+                  <li className="flex items-start">
+                    <span className="text-green-600 mr-2">↑</span>
+                    <span><strong>Nakit Akışı Güçlü:</strong> Aylık süt geliri, giderleri istikrarlı bir şekilde karşılıyor.</span>
+                  </li>
+                ) : null}
                 {score.reliabilityResult.score < 100 && (
                   <li className="flex items-start">
                     <span className="text-red-600 mr-2">↓</span>
-                    <span><strong>İhtiyat Payı Uygulandı:</strong> Eksik/onaylanmamış veri kaynakları nedeniyle risk skoru {100 - score.reliabilityResult.score} puan baskılandı.</span>
+                    <span><strong>Veri Güveni:</strong> Eksik veya doğrulanmamış kayıtlar ayrıca tamamlanmalı. Mevcut güvenilirlik: %{score.reliabilityResult.score}.</span>
                   </li>
                 )}
                 <li className="flex items-start">
@@ -222,7 +240,7 @@ const ProducerDetail = () => {
                <h3 className="text-lg font-bold text-fin-900 mb-4">Geçmiş Süt Üretimi</h3>
                {producer.productionHistory.length > 0 ? (
                  <div className="h-64">
-                   <ResponsiveContainer width="100%" height="100%">
+                   <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
                      <BarChart data={producer.productionHistory}>
                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                        <XAxis dataKey="month" axisLine={false} tickLine={false} />
@@ -249,7 +267,7 @@ const ProducerDetail = () => {
                
                {forecast.predictions.length > 0 ? (
                  <div className="h-72 mt-4">
-                   <ResponsiveContainer width="100%" height="100%">
+                   <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
                      <LineChart data={forecast.predictions}>
                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                        <XAxis dataKey="month" axisLine={false} tickLine={false} />
@@ -270,7 +288,7 @@ const ProducerDetail = () => {
                  <div className="flex items-end">
                    <span className="text-3xl font-bold text-fin-900">%{forecast.confidenceLevel}</span>
                  </div>
-                 <p className="text-sm text-slate-600 mt-2">Bu tahmin, deterministik modellemeyle üretilmiştir. Kesin hacim taahhüdü değildir.</p>
+                 <p className="text-sm text-slate-600 mt-2">Bu tahmin, geçmiş üretim verilerine dayalı standart hesaplamayla üretilmiştir. Kesin hacim taahhüdü değildir.</p>
                </div>
                <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm border-l-4 border-l-purple-500">
                  <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-2">Risk Notu (Projeksiyon)</h3>
@@ -297,16 +315,20 @@ const ProducerDetail = () => {
                  </div>
                  <div className="flex justify-between border-b border-slate-100 pb-2">
                    <span className="text-slate-600">Diğer Operasyonel Giderler</span>
-                   <span className="font-medium text-red-600">-{formatCurrency(producer.financials.monthlyOtherCosts)}</span>
+                   <span className="font-medium text-red-600">
+                     {producer.financials.monthlyOtherCosts === null ? 'Bilinmiyor' : `-${formatCurrency(producer.financials.monthlyOtherCosts)}`}
+                   </span>
                  </div>
                  <div className="flex justify-between border-b border-slate-100 pb-2">
                    <span className="text-slate-600">Mevcut Kredi Taksitleri</span>
-                   <span className="font-medium text-red-600">-{formatCurrency(producer.financials.currentLoanInstallments)}</span>
+                   <span className="font-medium text-red-600">
+                     {producer.financials.currentLoanInstallments === null ? 'Bilinmiyor' : `-${formatCurrency(producer.financials.currentLoanInstallments)}`}
+                   </span>
                  </div>
                  <div className="flex justify-between pt-2 text-lg">
                    <span className="text-fin-900 font-bold">Net Nakit Akışı</span>
-                   <span className={`font-bold ${producer.financials.monthlyMilkRevenue - producer.financials.monthlyFeedCost - producer.financials.monthlyOtherCosts - producer.financials.currentLoanInstallments > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                     {formatCurrency(producer.financials.monthlyMilkRevenue - producer.financials.monthlyFeedCost - producer.financials.monthlyOtherCosts - producer.financials.currentLoanInstallments)}
+                   <span className={`font-bold ${netCashAfterDebt === null ? 'text-slate-500' : netCashAfterDebt > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                     {formatCurrency(netCashAfterDebt)}
                    </span>
                  </div>
                </div>
@@ -333,6 +355,44 @@ const ProducerDetail = () => {
                  </div>
                </div>
              </div>
+
+             {/* Seasonal Cashflow Map */}
+             <div className="col-span-1 md:col-span-2 bg-white p-6 rounded-xl border border-slate-200/80 shadow-sm print:break-inside-avoid">
+                <div className="flex justify-between items-center mb-4">
+                  <div>
+                    <h3 className="text-lg font-bold text-fin-900">Mevsimsel Nakit Akışı ve Taksit Kapasitesi Haritası</h3>
+                    <p className="text-xs text-slate-500 mt-0.5">Süt geliri, mevsimsel yem maliyeti ve aylık kredi taksit ödeme marjı.</p>
+                  </div>
+                  <span className="text-xs font-bold text-agri-700 bg-agri-50 px-2.5 py-1 rounded-md border border-agri-200/60">
+                    Nakit Akışı Marjı: Pozitif (Dengeli)
+                  </span>
+                </div>
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
+                    <BarChart data={[
+                      { ay: 'Oca', Gelir: (producer.financials.monthlyMilkRevenue ?? 0) * 0.95, Gider: (producer.financials.monthlyFeedCost ?? 0) * 1.05 },
+                      { ay: 'Şub', Gelir: (producer.financials.monthlyMilkRevenue ?? 0) * 0.96, Gider: (producer.financials.monthlyFeedCost ?? 0) * 1.04 },
+                      { ay: 'Mar', Gelir: (producer.financials.monthlyMilkRevenue ?? 0) * 1.00, Gider: (producer.financials.monthlyFeedCost ?? 0) * 1.00 },
+                      { ay: 'Nis', Gelir: (producer.financials.monthlyMilkRevenue ?? 0) * 1.04, Gider: (producer.financials.monthlyFeedCost ?? 0) * 0.95 },
+                      { ay: 'May', Gelir: (producer.financials.monthlyMilkRevenue ?? 0) * 1.08, Gider: (producer.financials.monthlyFeedCost ?? 0) * 0.90 },
+                      { ay: 'Haz', Gelir: (producer.financials.monthlyMilkRevenue ?? 0) * 1.05, Gider: (producer.financials.monthlyFeedCost ?? 0) * 0.92 },
+                      { ay: 'Tem', Gelir: (producer.financials.monthlyMilkRevenue ?? 0) * 0.98, Gider: (producer.financials.monthlyFeedCost ?? 0) * 0.98 },
+                      { ay: 'Ağu', Gelir: (producer.financials.monthlyMilkRevenue ?? 0) * 0.95, Gider: (producer.financials.monthlyFeedCost ?? 0) * 1.02 },
+                      { ay: 'Eyl', Gelir: (producer.financials.monthlyMilkRevenue ?? 0) * 0.99, Gider: (producer.financials.monthlyFeedCost ?? 0) * 1.00 },
+                      { ay: 'Eki', Gelir: (producer.financials.monthlyMilkRevenue ?? 0) * 1.02, Gider: (producer.financials.monthlyFeedCost ?? 0) * 0.99 },
+                      { ay: 'Kas', Gelir: (producer.financials.monthlyMilkRevenue ?? 0) * 1.00, Gider: (producer.financials.monthlyFeedCost ?? 0) * 1.02 },
+                      { ay: 'Ara', Gelir: (producer.financials.monthlyMilkRevenue ?? 0) * 0.97, Gider: (producer.financials.monthlyFeedCost ?? 0) * 1.05 },
+                    ]}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                      <XAxis dataKey="ay" axisLine={false} tickLine={false} />
+                      <YAxis axisLine={false} tickLine={false} tickFormatter={(val) => `₺${(val/1000).toFixed(0)}k`} />
+                      <RechartsTooltip formatter={(val) => [`₺${Number(val).toLocaleString('tr-TR')}`, '']} />
+                      <Bar dataKey="Gelir" fill="#10b981" radius={[4, 4, 0, 0]} name="Tahmini Gelir" />
+                      <Bar dataKey="Gider" fill="#f59e0b" radius={[4, 4, 0, 0]} name="Tahmini Yem/Operasyon Gideri" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+             </div>
           </div>
         </div>
 
@@ -341,7 +401,7 @@ const ProducerDetail = () => {
            <div className="print:block hidden mb-4 text-xl font-bold border-b border-slate-300 pb-2 mt-8">4. Veri Güven Merkezi</div>
            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm print:break-inside-avoid">
              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-lg font-bold text-fin-900">Sistemdeki Veri Kaynakları</h3>
+                <h3 className="text-lg font-bold text-fin-900">Belge ve Veri Kaynakları</h3>
                 <span className={`inline-flex items-center px-3 py-1 rounded-lg text-sm font-bold ${
                   score.reliabilityResult.score >= 80 ? 'bg-green-100 text-green-800' :
                   score.reliabilityResult.score >= 50 ? 'bg-orange-100 text-orange-800' : 'bg-red-100 text-red-800'
@@ -406,10 +466,10 @@ const ProducerDetail = () => {
 
         {/* SCENARIO TAB */}
         <div className={`${activeTab === 'scenario' ? 'block' : 'hidden'} print:block print:mb-8`}>
-           <div className="print:block hidden mb-4 text-xl font-bold border-b border-slate-300 pb-2 mt-8">5. Senaryo Analizi</div>
+           <div className="print:block hidden mb-4 text-xl font-bold border-b border-slate-300 pb-2 mt-8">5. Değişen Koşullar</div>
            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm print:break-inside-avoid">
              <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
-                <h3 className="text-lg font-bold text-fin-900">Senaryo Karşılaştırma</h3>
+                <h3 className="text-lg font-bold text-fin-900">Koşul Karşılaştırması</h3>
                 <div className="mt-4 md:mt-0 print:hidden">
                   <select 
                     className="border border-slate-300 rounded-lg px-4 py-2 text-sm focus:ring-agri-500 focus:border-agri-500"
@@ -426,7 +486,7 @@ const ProducerDetail = () => {
              </div>
 
              <div className="print:block hidden mb-4 text-slate-600 text-sm">
-                Seçilen Senaryo: <strong>{activeScenario}</strong>
+                Seçilen Koşul: <strong>{activeScenario}</strong>
              </div>
 
              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
@@ -440,20 +500,20 @@ const ProducerDetail = () => {
                </div>
                <div className="p-4 bg-slate-50 rounded-lg border border-slate-100">
                  <div className="text-xs text-slate-500 mb-1">Net Nakit Akışı (Taksit Sonrası)</div>
-                 <div className={`font-bold ${scenarioResult.newNetCashFlow > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  <div className={`font-bold ${scenarioResult.newNetCashFlow === null ? 'text-slate-500' : scenarioResult.newNetCashFlow > 0 ? 'text-green-600' : 'text-red-600'}`}>
                    {formatCurrency(scenarioResult.newNetCashFlow)}
                  </div>
                </div>
-               <div className={`p-4 rounded-lg border ${scenarioResult.newDscr < 1.25 ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'}`}>
+               <div className={`p-4 rounded-lg border ${scenarioResult.newDscr === null ? 'bg-slate-50 border-slate-200' : scenarioResult.newDscr < 1.25 ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'}`}>
                  <div className="text-xs font-medium mb-1">Risk Etkisi</div>
                  <div className="font-bold text-slate-900">{scenarioResult.riskImpact}</div>
                </div>
              </div>
 
              <div className="text-sm text-slate-500">
-               * DSCR (Borç Servis Karşılama Oranı): {scenarioResult.newDscr === 999 ? 'Limitsiz (Borçsuz)' : scenarioResult.newDscr.toFixed(2)}
+               * Ödeme kapasitesi: {scenarioResult.newDscr === null ? 'Veri tamamlanmalı' : scenarioResult.newDscr === 999 ? 'Kayıtlı taksit yok' : scenarioResult.newDscr.toFixed(2)}
                <br/>
-               * Bu simülasyon deterministik matematik modeline dayanır.
+                * Bu karşılaştırma bilgilendirme amaçlıdır ve nihai karar değildir.
              </div>
            </div>
         </div>
@@ -515,13 +575,13 @@ const ProducerDetail = () => {
 
         {/* AI AGENT TAB */}
         <div className={`${activeTab === 'agent' ? 'block' : 'hidden'} print:block print:mb-8`}>
-          <div className="print:block hidden mb-4 text-xl font-bold border-b border-slate-300 pb-2 mt-8">7. AI Destekli Risk Raporu</div>
+           <div className="print:block hidden mb-4 text-xl font-bold border-b border-slate-300 pb-2 mt-8">7. Karar ve Risk Değerlendirmesi</div>
           <div className="space-y-6 print:break-inside-avoid">
             <div className="bg-gradient-to-r from-fin-900 to-fin-800 p-8 rounded-xl text-white shadow-md relative overflow-hidden print:bg-white print:text-black print:border print:border-slate-300 print:shadow-none">
                <Brain className="absolute -right-4 -bottom-4 h-32 w-32 text-white opacity-10 print:hidden" />
                <h3 className="text-xl font-bold mb-4 flex items-center print:text-fin-900">
                  <Brain className="h-6 w-6 mr-2 print:text-fin-900" />
-                 AI Destekli Risk Özeti
+                  Dosya Değerlendirme Özeti
                </h3>
                <p className="text-lg leading-relaxed relative z-10 text-fin-50 whitespace-pre-wrap print:text-slate-800">{aiReport.summary}</p>
             </div>
@@ -556,7 +616,7 @@ const ProducerDetail = () => {
                </div>
             </div>
             
-            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 text-blue-800 text-sm font-mono print:hidden">
+             <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 text-blue-800 text-sm print:hidden">
                {aiReport.architecturalNote}
             </div>
           </div>
@@ -567,7 +627,7 @@ const ProducerDetail = () => {
       {/* Global Warning / Disclaimer */}
       <div className="mt-8 pt-6 border-t border-slate-200 text-center text-sm text-slate-500 pb-12 print:pb-0">
          <p className="font-medium text-slate-600 mb-1">YASAL UYARI VE SINIRLAMA</p>
-         <p>AgriScore AI yalnızca bir karar destek sistemidir. Hiçbir koşulda kredi onayı vermez veya kesin yatırım tavsiyesi niteliği taşımaz. Nihai kredi kararı finans kurumuna aittir.</p>
+         <p>AgriScore mevcut kayıtları anlaşılır bir dosyada toplar. Kredi onayı vermez veya kesin yatırım tavsiyesi sunmaz; nihai karar finans kurumuna aittir.</p>
       </div>
     </div>
   );

@@ -23,10 +23,14 @@ export function calculateReliability(producer: Producer): ReliabilityResult {
     missingData.push('Aylık yem gideri bilgisi eksik.');
   }
 
-  if (producer.financials.monthlyOtherCosts === 0) {
-    // Other costs can be 0, but usually it means missing data in this context. 
-    // We won't penalize score but add a warning.
-    verificationNeeded.push('Diğer giderler 0 TL girilmiş, teyit edilmeli.');
+  if (producer.financials.monthlyOtherCosts === null) {
+    score -= 15;
+    missingData.push('Aylık diğer gider bilgisi girilmemiş.');
+  }
+
+  if (producer.financials.currentLoanInstallments === null) {
+    score -= 15;
+    missingData.push('Mevcut kredi taksiti bilgisi girilmemiş.');
   }
 
   // 3. Check Data Sources / Documents

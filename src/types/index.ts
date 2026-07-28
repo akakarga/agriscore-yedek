@@ -17,8 +17,8 @@ export interface HerdInfo {
 export interface Financials {
   monthlyMilkRevenue: number;
   monthlyFeedCost: number;
-  monthlyOtherCosts: number;
-  currentLoanInstallments: number;
+  monthlyOtherCosts: number | null;
+  currentLoanInstallments: number | null;
   requestedLoanAmount: number;
 }
 
@@ -52,20 +52,25 @@ export interface ReliabilityResult {
 }
 
 export interface ScoreResult {
-  overallScore: number;
-  riskLevel: RiskLevel;
+  overallScore: number | null;
+  riskLevel: RiskLevel | null;
+  methodologyVersion: 'rules-v2.0';
+  assessmentStatus: 'Hesaplanabilir' | 'Eksik Bilgi';
+  missingCriticalData: string[];
+  operatingIncome: number | null;
+  currentDscr: number | null;
   subScores: {
-    productionStability: number;
-    cashflowStrength: number;
-    herdStrength: number;
-    debtBurden: number;
-    incomeRegularity: number;
-    operationalRisk: number;
+    productionStability: number | null;
+    cashflowStrength: number | null;
+    herdStrength: number | null;
+    debtBurden: number | null;
+    incomeRegularity: number | null;
+    operationalRisk: number | null;
   };
   positiveSignals: string[];
   riskWarnings: string[];
   reliabilityResult: ReliabilityResult;
-  safeInstallmentRange: { min: number; max: number };
+  safeInstallmentRange: { min: number | null; max: number | null };
 }
 
 export interface ForecastResult {
@@ -84,10 +89,10 @@ export interface AIReportResult {
 
 export interface ScenarioResult {
   scenarioName: string;
-  newMonthlyRevenue: number;
-  newMonthlyExpenses: number;
-  newNetCashFlow: number;
-  newDscr: number;
+  newMonthlyRevenue: number | null;
+  newMonthlyExpenses: number | null;
+  newNetCashFlow: number | null;
+  newDscr: number | null;
   riskImpact: string;
   scoreImpact: number;
 }
@@ -102,6 +107,13 @@ export interface Opportunity {
   region: string[]; // 'Tümü' veya il isimleri
   requiredDocuments: string[];
   eligibilityRules: string;
+  eligibility: {
+    minDscr?: number;
+    minimumReliability?: number;
+    minimumFeedRevenueRatio?: number;
+    allowedRiskLevels?: RiskLevel[];
+    excludedRiskTerms?: string[];
+  };
   sourceNote: string; // "Senaryolaştırılmış örnek fırsattır. Resmi kurumlardan doğrulanmalıdır." vb.
 }
 
@@ -112,7 +124,6 @@ export interface OpportunityMatch {
   reasonForRecommendation: string;
   strongPoints: string[];
   missingRequirements: string[];
-  verificationStatus: 'Eksik Belge' | 'Doğrulama Gerekli' | 'Ön Onaylı Gibi' | 'Değerlendirilebilir';
+  verificationStatus: 'Eksik Belge' | 'Doğrulama Gerekli' | 'Yüksek Uyum - Resmi Doğrulama Gerekli' | 'Değerlendirilebilir';
   riskNote: string;
 }
-

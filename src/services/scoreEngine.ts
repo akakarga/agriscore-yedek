@@ -10,13 +10,14 @@ export const calculateAgriScore = (producer: Producer): ScoreResult => {
   // Calculate Reliability
   const reliabilityResult = calculateReliability(producer);
 
-  // 1. Production Stability (25%)
+  // 1. Production Stability (20%)
   let productionStabilityScore = 0;
   if (productionHistory.length > 1) {
     const changes: number[] = [];
     for (let i = 1; i < productionHistory.length; i++) {
       const prev = productionHistory[i - 1].totalLiters;
       const curr = productionHistory[i].totalLiters;
+      if (prev <= 0) continue;
       const pctChange = Math.abs((curr - prev) / prev);
       changes.push(pctChange);
       
@@ -32,13 +33,20 @@ export const calculateAgriScore = (producer: Producer): ScoreResult => {
     productionStabilityScore = 50; // Default mid-score for missing data
   }
 
-  // 2. Cashflow Strength (25%)
+  // 2. Cashflow Strength (20%)
   const totalRevenue = financials.monthlyMilkRevenue;
-  const totalCosts = financials.monthlyFeedCost + financials.monthlyOtherCosts;
-  const netCashFlow = totalRevenue - totalCosts;
+  const otherCosts = financials.monthlyOtherCosts;
+  const currentInstallments = financials.currentLoanInstallments;
+  const totalCosts = otherCosts === null
+    ? null
+    : financials.monthlyFeedCost + otherCosts;
+  const netCashFlow = totalCosts === null ? null : totalRevenue - totalCosts;
   
-  let cashflowStrengthScore = 0;
-  if (netCashFlow > 0) {
+  let cashflowStrengthScore: number | null = 0;
+  if (netCashFlow === null) {
+    cashflowStrengthScore = null;
+    warnings.push('Diğer gider bilgisi eksik olduğu için nakit akışı tamamlanamadı.');
+  } else if (netCashFlow > 0) {
     const margin = netCashFlow / totalRevenue;
     cashflowStrengthScore = Math.min(100, margin * 300); // 33% margin = 100 score
     if (cashflowStrengthScore > 80) positiveSignals.push('Nakit akışı güçlü ve sürdürülebilir.');
@@ -46,29 +54,34 @@ export const calculateAgriScore = (producer: Producer): ScoreResult => {
     warnings.push('Negatif nakit akışı: Aylık giderler gelirleri aşıyor.');
   }
 
-  // 3. Herd Strength (20%)
+  // 3. Herd Strength (15%)
   const milkingRatio = herd.totalCattle > 0 ? herd.milkingCows / herd.totalCattle : 0;
   let herdStrengthScore = Math.min(100, milkingRatio * 150); // 66% milking ratio = 100 score
   
-  if (herd.heifers / herd.totalCattle > 0.3) {
+  if (herd.totalCattle > 0 && herd.heifers / herd.totalCattle > 0.3) {
       positiveSignals.push('Genç hayvan (düve) oranı yüksek, gelecek üretimi destekliyor.');
       herdStrengthScore = Math.min(100, herdStrengthScore + 10);
   }
   if (herdStrengthScore > 80) positiveSignals.push('Sağmal hayvan oranı ideal seviyede.');
 
   // 4. Debt Burden (15%)
-  let debtBurdenScore = 100;
-  if (netCashFlow > 0) {
-    const dscr = netCashFlow / (financials.currentLoanInstallments || 1); // Debt Service Coverage Ratio
-    if (dscr < 1.2 && financials.currentLoanInstallments > 0) {
+  let debtBurdenScore: number | null = 100;
+  if (currentInstallments === null || netCashFlow === null) {
+    debtBurdenScore = null;
+    warnings.push('Mevcut taksit veya gider bilgisi eksik olduğu için ödeme gücü hesaplanamadı.');
+  } else if (netCashFlow > 0) {
+    const paymentCapacity = currentInstallments > 0
+      ? netCashFlow / currentInstallments
+      : Number.POSITIVE_INFINITY;
+    if (paymentCapacity < 1.2 && currentInstallments > 0) {
       warnings.push('Mevcut borç yükü net nakit akışının büyük kısmını tüketiyor.');
-      debtBurdenScore = Math.max(0, dscr * 50);
-    } else if (dscr >= 1.2 && dscr < 2) {
+      debtBurdenScore = Math.max(0, paymentCapacity * 50);
+    } else if (paymentCapacity >= 1.2 && paymentCapacity < 2) {
       debtBurdenScore = 75;
     } else {
       positiveSignals.push('Borç servis kapasitesi (ödeme gücü) yüksek.');
     }
-  } else if (financials.currentLoanInstallments > 0) {
+  } else if (currentInstallments > 0) {
     debtBurdenScore = 0;
   }
 
@@ -83,6 +96,7 @@ export const calculateAgriScore = (producer: Producer): ScoreResult => {
     incomeRegularityScore -= 30;
     warnings.push('Gelir/Gider nakit akışında dönemsel düzensizlikler kaydedildi.');
   }
+  incomeRegularityScore = Math.max(0, incomeRegularityScore);
 
   // 6. Operational Risk (15%)
   let operationalRiskScore = 100;
@@ -93,51 +107,79 @@ export const calculateAgriScore = (producer: Producer): ScoreResult => {
   if (riskNotes.some(note => note.toLowerCase().includes('dalgalanma') || note.toLowerCase().includes('yetersiz'))) {
     operationalRiskScore -= 20;
   }
+  operationalRiskScore = Math.max(0, operationalRiskScore);
   if (operationalRiskScore > 80) positiveSignals.push('Operasyonel risk profili güvenli seviyede.');
 
   // Aggregate Score
-  let overallScore = 
-    (productionStabilityScore * 0.20) + 
-    (cashflowStrengthScore * 0.20) + 
-    (herdStrengthScore * 0.15) + 
-    (debtBurdenScore * 0.15) + 
-    (incomeRegularityScore * 0.15) +
-    (operationalRiskScore * 0.15);
+  let overallScore = cashflowStrengthScore === null || debtBurdenScore === null
+    ? null
+    : (productionStabilityScore * 0.20)
+      + (cashflowStrengthScore * 0.20)
+      + (herdStrengthScore * 0.15)
+      + (debtBurdenScore * 0.15)
+      + (incomeRegularityScore * 0.15)
+      + (operationalRiskScore * 0.15);
 
-  // Apply data reliability penalty
   if (reliabilityResult.score < 50) {
-    overallScore = overallScore * 0.6; // 40% penalty for critically poor data quality
-    warnings.push('Veri güvenilirliği çok düşük olduğu için Risk Skoru baskılandı.');
+    warnings.push('Veri güvenilirliği çok düşük; sonuçlar eksikler tamamlanmadan doğrulanmış sayılmaz.');
   } else if (reliabilityResult.score < 80) {
-    overallScore = overallScore * 0.9; // 10% penalty for incomplete data
-    warnings.push('Eksik veriler nedeniyle Risk Skoru ihtiyatlı hesaplandı.');
+    warnings.push('Eksik veriler mevcut; sonuçlar ek belge ve kayıtlarla doğrulanmalı.');
   }
 
-  overallScore = Math.round(overallScore);
+  overallScore = overallScore === null ? null : Math.round(overallScore);
 
   // Determine Risk Level
-  let riskLevel: RiskLevel = 'Orta';
-  if (overallScore >= 75) riskLevel = 'Düşük';
-  else if (overallScore < 50) riskLevel = 'Yüksek';
+  let riskLevel: RiskLevel | null = null;
+  if (overallScore !== null) {
+    riskLevel = 'Orta';
+    if (overallScore >= 75) riskLevel = 'Düşük';
+    else if (overallScore < 50) riskLevel = 'Yüksek';
+  }
 
-  // Capacity calculation
-  const safeInstallmentMax = netCashFlow > 0 ? netCashFlow * 0.6 : 0; // Can safely use 60% of net cashflow for new loans
-  const safeInstallmentMin = netCashFlow > 0 ? netCashFlow * 0.3 : 0;
+  const currentDscr = netCashFlow !== null
+    && currentInstallments !== null
+    && currentInstallments > 0
+    ? netCashFlow / currentInstallments
+    : null;
+
+  const safeInstallmentMin = netCashFlow !== null
+    && currentInstallments !== null
+    ? Math.max(0, (netCashFlow / 1.5) - currentInstallments)
+    : null;
+  const safeInstallmentMax = netCashFlow !== null
+    && currentInstallments !== null
+    && safeInstallmentMin !== null
+    ? Math.max(
+        safeInstallmentMin,
+        (netCashFlow / 1.25) - currentInstallments
+      )
+    : null;
 
   return {
     overallScore,
     riskLevel,
+    methodologyVersion: 'rules-v2.0',
+    assessmentStatus: overallScore === null ? 'Eksik Bilgi' : 'Hesaplanabilir',
+    missingCriticalData: [
+      ...(otherCosts === null ? ['Aylık diğer giderler'] : []),
+      ...(currentInstallments === null ? ['Mevcut kredi taksitleri'] : []),
+    ],
+    operatingIncome: netCashFlow === null ? null : Math.round(netCashFlow),
+    currentDscr,
     subScores: {
       productionStability: Math.round(productionStabilityScore),
-      cashflowStrength: Math.round(cashflowStrengthScore),
+      cashflowStrength: cashflowStrengthScore === null ? null : Math.round(cashflowStrengthScore),
       herdStrength: Math.round(herdStrengthScore),
-      debtBurden: Math.round(debtBurdenScore),
-      incomeRegularity: Math.max(0, Math.round(incomeRegularityScore)),
-      operationalRisk: Math.max(0, Math.round(operationalRiskScore)),
+      debtBurden: debtBurdenScore === null ? null : Math.round(debtBurdenScore),
+      incomeRegularity: Math.round(incomeRegularityScore),
+      operationalRisk: Math.round(operationalRiskScore),
     },
     positiveSignals,
     riskWarnings: warnings,
     reliabilityResult,
-    safeInstallmentRange: { min: Math.round(safeInstallmentMin), max: Math.round(safeInstallmentMax) }
+    safeInstallmentRange: {
+      min: safeInstallmentMin === null ? null : Math.round(safeInstallmentMin),
+      max: safeInstallmentMax === null ? null : Math.round(safeInstallmentMax),
+    }
   };
 };

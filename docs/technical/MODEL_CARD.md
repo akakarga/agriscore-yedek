@@ -1,4 +1,4 @@
-# Model Scorecard (Model Card)
+# AgriScore rules-v2.0 Model Kartı
 
 AgriScore AI bünyesinde çalışan risk, veri güvenilirliği ve fırsat uygunluğu motorlarının (algoritmalarının) şeffaflık, sınır ve kullanım amacını açıklayan model kartıdır.
 
@@ -8,7 +8,7 @@ AgriScore Motoru, süt ve hayvancılık üreticilerinin mevcut finansal, operasy
 ## 2. Model Çıktıları
 *   **AgriScore Risk Score (0-100):** Üreticinin genel ödeme kapasitesi ve üretim direncini gösteren ana gösterge.
 *   **Veri Güvenilirliği Skoru (0-100):** Üreticinin beyan ettiği verilerin belgelere/resmi kaynaklara dayanma oranını gösteren güven filtresi.
-*   **Gelecek Verim Tahmini (Trend Analizi):** Önümüzdeki 6 ay için öngörülen süt üretimi (Litre).
+*   **Gelecek Verim Projeksiyonu (Trend Analizi):** Önümüzdeki 6 ay için kural tabanlı süt üretimi senaryosu (litre); kalibre edilmiş ML tahmini değildir.
 *   **Fırsat Uygunluk Skoru (0-100):** Üretici profilinin belirli bir devlet desteği/hibe şartnamesine olan teorik uygunluk derecesi.
 
 ## 3. Üretilmeyen Çıktılar (Anti-Use Cases)
@@ -31,12 +31,12 @@ Model deterministik bir kural motoru (rule-based engine) ve zaman serisi (time-s
 
 ## 6. Veri Güvenilirliğinin Etkisi (Discount Factor)
 Modelin en güçlü özelliği "ihtiyat" (discount) mekanizmasıdır. Eğer bir üreticinin üretim verileri iyi olsa da belgeleri eksikse, sistem **AgriScore Risk Skorunu düşürür**.
-*   *Eksik veri durumunda davranış:* Veri eksiği tespit edilirse "İncelenmesi Gerekiyor" flag'i üretilir ve skor %10-20 oranında cezalandırılır (penalty).
+*   *Eksik veri durumunda davranış:* Güvenilirlik `%50` altındaysa toplam skor `0,60`, `%80` altındaysa `0,90` ile çarpılır; aksi halde güvenilirlik cezası uygulanmaz.
 *   Böylece sahte beyanlarla yüksek kredi skoru elde edilmesi zorlaştırılır.
 
 ## 7. Fırsat Uygunluk ve Tahmin Sınırları
-*   **Tahmin Güven Seviyesi:** Gelecek verim tahmini, hayvanların normal fizyolojik eğrilerine (laktasyon) göre hesaplanır. Beklenmedik salgın hastalıklar veya aşırı iklim şokları tahmin kapsamı dışındadır.
-*   **Fırsat Uygunluk:** Şartnamelerin anahtar kelimeleriyle (ör: bölge, yaş, hayvan sayısı) eşleşme arar. Başvurunun kesin olumlu sonuçlanacağını değil, "dosyanın şartları ne kadar karşıladığını" gösterir.
+*   **Projeksiyon sınırı:** Gelecek verim çıktısı son dönem trendi, sürü oranı ve deterministik mevsim katsayılarından üretilir. İstatistiksel güven aralığı veya doğruluk yüzdesi değildir; salgın ve iklim şokları kapsam dışıdır.
+*   **Fırsat uygunluğu:** İşletme tipi, bölge, yalnızca doğrulanmış belgeler, DSCR, risk seviyesi, veri güvenilirliği, yem/gelir oranı ve hariç tutulan risk terimleri gibi yapılandırılmış kuralları değerlendirir. Program kayıtları sentetik senaryodur; resmi uygunluk veya hak kazanımı göstermez.
 
 ## 8. İnsan ve Kurum Denetimi Gerekliliği (Human-in-the-loop)
 AgriScore AI hiçbir zaman tamamen otonom karar alacak şekilde kurgulanmamıştır.

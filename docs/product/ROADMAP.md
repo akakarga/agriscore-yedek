@@ -6,7 +6,7 @@ Mevcut AgriScore AI sürümü, tarımsal verinin alternatif skorlama ve karar de
 
 ## 1. Kısa Vadeli Geliştirmeler (MVP Sonrası İlk Faz)
 *   **Açık Rıza ve Veri İzni Yönetimi (KVKK):** Üreticilerin verilerinin işlenmesi için dijital onay altyapısının (e-imza / SMS onay) kurulması.
-*   **Kullanıcı Yetkilendirme (Real Auth):** Mevcut demo (mock) giriş sisteminin, gerçek bir kimlik doğrulama sağlayıcısı (Keycloak, Auth0 veya banka içi SSO) ile değiştirilmesi.
+*   **Kullanıcı Yetkilendirme (Gerçek Auth):** Mevcut istemci taraflı demo giriş sisteminin, gerçek bir kimlik doğrulama sağlayıcısı (Keycloak, Auth0 veya banka içi SSO) ile değiştirilmesi.
 *   **Dinamik Fırsat Eşleştirme API'si:** Manuel tanımlı fırsatların (Opportunities) yerine, TKDK ve KOSGEB gibi kurumların açık RSS veya duyuru panolarından veri çeken (Web Scraping / API) bir servisin kurulması.
 
 ## 2. Orta Vadeli Geliştirmeler (Entegrasyon Fazı)

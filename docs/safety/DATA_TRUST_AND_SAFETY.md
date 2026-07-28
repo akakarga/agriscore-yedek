@@ -23,7 +23,7 @@ Veri Güvenilirliği Skoru (Reliability Score), üreticinin sunduğu finansal ve
 
 ## 3. Demo Veriler Neden Gerçek Değildir?
 *   Mevcut sistemde gösterilen isimler, skorlar, üretim rakamları, destek fırsatları ve portföy bilgileri **tamamen yarışma ve konsept gösterim amaçlı senaryolaştırılmış (seed) verilerdir**.
-*   Bu sürümde gerçek bankalara, resmi devlet kurumlarına, LLM'lere veya veri tabanlarına canlı bir entegrasyon **yoktur**. Platform, gerçek entegrasyonlar yapıldığında sistemin nasıl davranacağını gösteren deterministik bir simülasyon sunar.
+*   Bu sürümde gerçek banka, resmi devlet kurumu veya veri tabanı entegrasyonu **yoktur**. `GROQ_API_KEY` yapılandırılmışsa Co-Pilot canlı LLM açıklaması üretebilir; sağlayıcı yoksa yerel deterministik moda düşer. Her iki mod da sentetik senaryo verisi kullanır ve kredi kararı vermez.
 
 ## 4. Gerçek Entegrasyonlar Nasıl Yapılmalıdır?
 Üretim aşamasında (Production) gerçek veri akışı sağlanırken şu adımlar zorunludur:

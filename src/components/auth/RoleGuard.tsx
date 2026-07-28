@@ -1,5 +1,5 @@
 import React from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router';
 import { sessionService } from '../../auth/session';
 import type { Role } from '../../auth/demoUsers';
 

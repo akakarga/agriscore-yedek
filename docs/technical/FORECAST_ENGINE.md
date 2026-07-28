@@ -1,19 +1,26 @@
-# AgriScore AI - Forecast Engine Architecture
+# Üretim Projeksiyon Motoru
 
-## Genel BakÄ±ÅŸ
-Forecast Engine, geÃ§miÅŸ Ã¼retim verileri ve sÃ¼rÃ¼ yapÄ±sÄ± dinamiklerini analiz ederek gelecek 6 aylÄ±k periyotta sÃ¼t Ã¼retim hacmi, ciro ve risk trendlerini projeksiyon olarak sunar.
+## Mevcut yöntem
 
-## Metodoloji
-1. **Tarihsel Ãœretim Ã‡izgisi:** Son 6 veya 12 aylÄ±k veriler, basit hareketli ortalama (SMA) veya doÄŸrusal regresyon trendi kullanÄ±larak analiz edilir.
-2. **SÃ¼rÃ¼ Demografisi Etkisi:** 
-   - DÃ¼velerin saÄŸmal sÃ¼rÃ¼ye katÄ±lma projeksiyonu pozitif etki yaratÄ±r.
-   - Kuruya ayrÄ±lacak inek sayÄ±sÄ± veya laktasyon sonu dÃ¶nemleri negatif etki yaratÄ±r.
-3. **Mevsimsellik:** Sistem genel bir mevsimsel faktÃ¶r (-%5 ile +%5 arasÄ±) uygulayarak yaz (sÄ±caklÄ±k stresi) veya bahar (bol yem) etkilerini simÃ¼le eder.
+Motor makine öğrenmesi veya Prophet değildir. En az üç aylık üretim geçmişinden deterministik kısa dönem trend kuralı üretir.
 
-## Ã‡Ä±ktÄ±lar
-- `predictions`: Gelecek 6 ay iÃ§in Ã¶ngÃ¶rÃ¼len sÃ¼t hacmi ve gelir tablosu.
-- `trendExplanation`: AI tarafÄ±ndan aÃ§Ä±klanabilir ÅŸekilde sunulan Ã¶zet (Ã–rn: "GenÃ§ hayvanlarÄ±n sÃ¼rÃ¼ye katÄ±lmasÄ±yla %10 artÄ±ÅŸ beklenmektedir").
-- `confidenceLevel`: Veri doÄŸruluÄŸu ve trend stabilitesine gÃ¶re belirlenen gÃ¼ven skoru.
+1. Son üç ay ortalaması ilk üç ay ortalamasıyla karşılaştırılır.
+2. `%5` üzeri artışta aylık `1,02`, `%5` üzeri düşüşte `0,97`, aksi halde `1,00` trend katsayısı kullanılır.
+3. Düve oranı `%25` üzerindeyse kapasite varsayımı olarak katsayıya `0,01` eklenir.
+4. Sağlık/dalgalanma risk notları güven seviyesini düşürür.
 
-## KullanÄ±m AmacÄ±
-Gelecekteki nakit akÄ±ÅŸÄ±nÄ± tahmin ederek, istenilen kredi taksitlerinin 6 ay sonra da gÃ¼venle Ã¶denip Ã¶denemeyeceÄŸini kuruma gÃ¶stermek.
+Frontend motorunda görünümü ayırt etmek için küçük deterministik mevsim faktörü bulunur. Backend rastgele değer üretmez.
+
+## Çıktı sınırı
+
+`confidenceLevel`, istatistiksel olarak kalibre edilmiş güven aralığı değildir. Üründe “kural tabanlı projeksiyon” olarak sunulmalıdır.
+
+## Gerçek model için gerekenler
+
+- En az 24-36 ay doğrulanmış üretim serisi
+- Sürü giriş/çıkışları, laktasyon evresi ve hastalık kayıtları
+- Bölgesel sıcaklık/nem ve yem rasyonu
+- Backtest, MAE/MAPE ve baseline karşılaştırması
+- Veri sızıntısı ve mevsimsel sapma kontrolleri
+
+Bu kanıtlar olmadan Prophet/ML tahmini veya doğruluk yüzdesi iddiası yapılmamalıdır.

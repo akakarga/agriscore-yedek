@@ -14,12 +14,12 @@ export interface DemoUser {
 export const demoUsers: DemoUser[] = [
   {
     id: 'U_INST_01',
-    name: 'AgriScore Kurumsal Demo',
+    name: 'AgriScore Kurumsal',
     email: 'kurum@agriscore.demo',
     demoPassword: 'Demo1234',
     role: 'institution',
     organizationName: 'Örnek Tarımsal Finans Kurumu',
-    demoLabel: 'Kurumsal Demo Hesap'
+    demoLabel: 'Kurumsal Çalışma Alanı'
   },
   {
     id: 'U_PROD_01',
@@ -28,6 +28,6 @@ export const demoUsers: DemoUser[] = [
     demoPassword: 'Demo1234',
     role: 'producer',
     linkedProducerId: 'P001',
-    demoLabel: 'Üretici Demo Hesap'
+    demoLabel: 'Üretici Çalışma Alanı'
   }
 ];

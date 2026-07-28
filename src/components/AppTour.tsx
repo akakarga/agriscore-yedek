@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Joyride } from 'react-joyride';
 import type { Step } from 'react-joyride';
 import { HelpCircle } from 'lucide-react';
-import { useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router';
 
 const AppTour = () => {
   const [run, setRun] = useState(false);
@@ -14,19 +14,24 @@ const AppTour = () => {
   const steps: Step[] = [
     {
       target: 'body',
-      content: 'AgriScore Yapay Zeka destekli tarımsal finans karar sistemine hoş geldiniz! Sizi proje içerisindeki yeteneklerimizle tanıştıralım.',
+      content: 'AgriScore’a hoş geldiniz. Çalışma alanlarını kısaca birlikte inceleyelim.',
       placement: 'center',
     },
     // Institution Sidebar
     ...(isInstitution ? [
       {
         target: '.tour-menu-dashboard',
-        content: 'Dashboard: Portföyünüzün risk dağılımını, şok senaryolarını ve genel finansal durumunu özetler.',
+        content: 'Portföy Özeti: Risk dağılımını, değişen koşulları ve genel finansal durumu tek bakışta gösterir.',
         placement: 'auto',
       },
       {
         target: '.tour-menu-producers',
-        content: 'Üreticiler: Sistemdeki tüm çiftçileri listeler. Buradan her bir üreticinin derinlemesine finansal/tarımsal karnesine ulaşabilirsiniz.',
+        content: 'Üreticiler: Çalışma alanındaki işletmeleri listeler. Her üreticinin finansal ve tarımsal ayrıntılarına buradan ulaşabilirsiniz.',
+        placement: 'auto',
+      },
+      {
+        target: '.tour-menu-decision-room',
+        content: 'Risk ve Analiz: Belge durumu, finansal görünüm, değişen koşullara dayanıklılık ve sonraki adımları birlikte gösterir.',
         placement: 'auto',
       },
       {
@@ -36,7 +41,7 @@ const AppTour = () => {
       },
       {
         target: '.tour-menu-cks-analiz',
-        content: 'Dinamik ÇKS: Çiftçi Kayıt Sistemi vb. belgelerin OCR ile anında okunup dijital verilere çevrildiği ve risk skorunun güncellendiği alandır.',
+        content: 'ÇKS Belgesi: Uygun PDF belgelerindeki temel kayıt alanlarını çıkarır. Belge tek başına finansal değerlendirme oluşturmaz.',
         placement: 'auto',
       }
     ] as Step[] : []),
@@ -55,9 +60,27 @@ const AppTour = () => {
       },
       {
         target: '.tour-simulation',
-        content: 'Değerlendirme Simülasyonu: Kredi onaylama stratejinizi değiştirerek, anlık olarak onaylanacak/reddedilecek adayları görün!',
+        content: 'Değerlendirme Simülasyonu: Skor eşiğini değiştirerek hangi profillerin inceleme listesine gireceğini simüle edin.',
         placement: 'top',
       }
+    ] as Step[] : []),
+
+    ...(location.pathname.startsWith('/institution/decision-room') ? [
+      {
+        target: '.tour-decision-room',
+        content: 'Risk ve Analiz ekranı kredi kararı vermez. Dosyayı beş anlaşılır başlıkta toplar ve incelemeyi kolaylaştırır.',
+        placement: 'bottom',
+      },
+      {
+        target: '.tour-council-agents',
+        content: 'Her değerlendirme alanı kendi bulgularını, dayanaklarını ve uyarılarını ayrı gösterir.',
+        placement: 'top',
+      },
+      {
+        target: '.tour-counterfactual',
+        content: 'Sonraki adımlar bölümü, işletme dosyasını güçlendirecek doğrulanabilir işleri sıralar.',
+        placement: 'top',
+      },
     ] as Step[] : []),
 
     // Producer Sidebar
@@ -79,7 +102,7 @@ const AppTour = () => {
       },
       {
         target: '.tour-menu-documents',
-        content: 'Belgeler: Sisteme yüklediğiniz tüm evrakları ve durumlarını buradan görebilirsiniz.',
+        content: 'Belgeler: Çalışma alanına eklenen belgeleri ve durumlarını buradan görebilirsiniz.',
         placement: 'auto',
       },
       {
@@ -94,7 +117,7 @@ const AppTour = () => {
       },
       {
         target: '.tour-menu-cks-analiz',
-        content: 'ÇKS Analizi: ÇKS belgenizi yükleyerek yapay zeka ile anında analiz edilmesini sağlayabilirsiniz.',
+        content: 'ÇKS Analizi: Uygun PDF belgelerindeki temel kayıt alanlarını çıkarır; finansal uygunluk kararı vermez.',
         placement: 'auto',
       }
     ] as Step[] : []),
@@ -116,12 +139,12 @@ const AppTour = () => {
     // Common End Steps
     {
       target: 'body',
-      content: 'Orta alanımız (Çalışma Alanı): Seçtiğiniz modüle göre ilgili analizleri bu alanda dinamik olarak görselleştiriyoruz.',
+      content: 'Çalışma Alanı: Seçtiğiniz bölüme ait özetleri ve ayrıntıları burada görürsünüz.',
       placement: 'center',
     },
     {
       target: '.tour-copilot',
-      content: 'Ve son olarak AgriScore Co-Pilot! Hangi sayfada olursanız olun bağlamı anlayarak size anında asistanlık yapar.',
+      content: 'AgriScore Yardımcısı, bulunduğunuz ekrandaki kayıtları sade bir dille açıklar.',
       placement: 'left',
     }
   ];
@@ -137,11 +160,12 @@ const AppTour = () => {
     <>
       <button 
         onClick={handleStartTour}
-        className="fixed bottom-24 right-6 z-50 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full p-3 shadow-lg flex items-center justify-center transition-transform hover:scale-105"
-        title="Projeyi Keşfet"
+        aria-label="Uygulamayı Keşfet"
+        className="fixed bottom-4 left-4 lg:bottom-24 lg:left-auto lg:right-6 z-50 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full p-3 shadow-lg flex items-center justify-center transition-transform hover:scale-105"
+        title="Uygulamayı Keşfet"
       >
-        <HelpCircle className="w-6 h-6 mr-2" />
-        <span className="font-bold pr-2">Projeyi Keşfet</span>
+        <HelpCircle className="w-6 h-6 lg:mr-2" />
+        <span className="hidden lg:inline font-bold pr-2">Uygulamayı Keşfet</span>
       </button>
 
       {/* @ts-ignore - react-joyride types are slightly inconsistent across versions */}

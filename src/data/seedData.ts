@@ -1,5 +1,12 @@
 import type { Producer } from '../types';
 
+export const DATASET_PROVENANCE = {
+  classification: 'SCENARIO_DATA',
+  label: 'Örnek İşletme Kayıtları',
+  description: 'Profiller gerçek kişi veya kurumlara ait değildir; ürün işleyişini güvenle incelemek için hazırlanmıştır.',
+  scoringUse: 'Sonuçlar yalnızca bu örnek girdilere dayanır ve bilgilendirme amaçlıdır.',
+} as const;
+
 export const producers: Producer[] = [
   {
     id: 'P001',
@@ -22,7 +29,7 @@ export const producers: Producer[] = [
       { month: 'Haz 2026', totalLiters: 88500, averagePerCow: 30.6 },
     ],
     financials: {
-      monthlyMilkRevenue: 1327500, // 15 TL/Litre
+      monthlyMilkRevenue: 1327500, // Örnek işletme girdisi; USK referans fiyatı değildir.
       monthlyFeedCost: 600000,
       monthlyOtherCosts: 150000,
       currentLoanInstallments: 50000,
@@ -113,7 +120,7 @@ export const producers: Producer[] = [
       'Planlı büyüme stratejisi uyguluyor.'
     ],
     dataSources: [
-      { name: 'Sürü Yönetim Yazılımı Dökümü', status: 'doğrulandı', date: '2026-07-01', impact: 'İşletme dijital olarak kendi verilerini doğru tutuyor.', description: 'Çiftlikte kullanılan sürü yönetim programı API verisi.' },
+      { name: 'Sürü Yönetim Yazılımı Dökümü', status: 'doğrulandı', date: '2026-07-01', impact: 'İşletme dijital olarak kendi verilerini doğru tutuyor.', description: 'Çiftlikte kullanılan sürü yönetim programı kaydı.' },
       { name: 'Yem Alım Faturaları', status: 'doğrulandı', date: '2026-06-28', impact: 'Yem giderleri yüksek ancak belgeli.', description: 'Büyük ölçekli yem alımları sözleşmeleri.' },
       { name: 'Finansal Sicil Örnek Raporu', status: 'doğrulandı', date: '2026-07-04', impact: 'Gecikmiş borcu yok, kredibilitesi yüksek.', description: 'Finansal sicil raporu örneği.' }
     ],
@@ -299,8 +306,8 @@ export const producers: Producer[] = [
     financials: {
       monthlyMilkRevenue: 390000,
       monthlyFeedCost: 200000,
-      monthlyOtherCosts: 0, // Eksik veri
-      currentLoanInstallments: 0, // Belirsiz
+      monthlyOtherCosts: null,
+      currentLoanInstallments: null,
       requestedLoanAmount: 400000,
     },
     riskNotes: [
@@ -314,7 +321,7 @@ export const producers: Producer[] = [
       { name: 'Resmi Sürü Kayıt Örneği', status: 'bekliyor', date: '2025-12-30', impact: 'Hayvan varlığı güncelliğini yitirmiş.', description: 'Son doğrulama 6 ay öncesine ait.' }
     ],
     farmMemory: 'Dijital kayıt tutma alışkanlığı yok. Finansal veriler tahmini veya beyana dayalı.',
-    verificationNotes: ['Veri güvenilirliği %40\'ın altında olduğu için kredi karar süreçleri otomatik işletilmemeli.']
+    verificationNotes: ['Veri güvenilirliği %40\'ın altında olduğu için eksik bilgiler tamamlanmadan kredi değerlendirmesi ilerletilmemeli.']
   }
 ];
 
@@ -328,8 +335,12 @@ export const opportunities: Opportunity[] = [
     targetProducerType: ['Süt Çiftliği', 'Karma Çiftlik'],
     region: ['Tümü'],
     requiredDocuments: ['Çiftçi Kayıt Belgesi (ÇKS)', 'Proforma Fatura', 'Mali Tablolar'],
-    eligibilityRules: 'DSCR > 1.25 ve Kredi Notu "Yüksek" veya "Orta" olan işletmeler.',
-    sourceNote: 'Senaryolaştırılmış finansal kredi fırsatı örneğidir.'
+    eligibilityRules: 'Ödeme kapasitesi 1,25 üzerinde ve risk seviyesi düşük veya orta olan işletmeler.',
+    eligibility: {
+      minDscr: 1.25,
+      allowedRiskLevels: ['Düşük', 'Orta'],
+    },
+    sourceNote: 'Örnek finansman programıdır; güncel koşullar resmi kaynaktan doğrulanmalıdır.'
   },
   {
     id: 'OPT-002',
@@ -339,7 +350,10 @@ export const opportunities: Opportunity[] = [
     region: ['Bursa', 'Balıkesir', 'Çanakkale', 'Tekirdağ', 'Konya', 'Burdur', 'Aydın', 'İzmir'],
     requiredDocuments: ['Yatırım Projesi', 'Tapu/Kira Sözleşmesi', 'İşletme Tescil Belgesi'],
     eligibilityRules: 'Kapasite artırımı planlayan ve veri güvenilirliği yüksek olan üreticiler.',
-    sourceNote: 'Senaryolaştırılmış hibe programı örneğidir. Resmi kurumlardan doğrulanmalıdır.'
+    eligibility: {
+      minimumReliability: 80,
+    },
+    sourceNote: 'Örnek hibe programıdır; güncel koşullar resmi kaynaktan doğrulanmalıdır.'
   },
   {
     id: 'OPT-003',
@@ -349,7 +363,10 @@ export const opportunities: Opportunity[] = [
     region: ['Tümü'],
     requiredDocuments: ['Süt Döküm Faturaları', 'Yem Alım Faturaları'],
     eligibilityRules: 'Aylık yem gideri toplam gelirinin %50\'sini aşan üreticiler önceliklidir.',
-    sourceNote: 'Senaryolaştırılmış devlet teşvik örneğidir. Tarım Bakanlığı açıklamaları esastır.'
+    eligibility: {
+      minimumFeedRevenueRatio: 0.5,
+    },
+    sourceNote: 'Örnek teşvik programıdır; ilgili bakanlığın güncel açıklamaları esastır.'
   },
   {
     id: 'OPT-004',
@@ -359,6 +376,11 @@ export const opportunities: Opportunity[] = [
     region: ['İzmir', 'Aydın', 'Burdur', 'Konya'],
     requiredDocuments: ['Kapasite Raporu', 'Hayvan Alım Sözleşmesi'],
     eligibilityRules: 'Sürü sağlığı iyi (mastitis vb. salgın yok) ve nakit akışı güçlü olanlar.',
-    sourceNote: 'Senaryolaştırılmış kredi teşvik örneğidir.'
+    eligibility: {
+      minDscr: 1.25,
+      allowedRiskLevels: ['Düşük', 'Orta'],
+      excludedRiskTerms: ['mastitis', 'salgın', 'hastalık'],
+    },
+    sourceNote: 'Örnek faiz desteği programıdır; güncel koşullar resmi kaynaktan doğrulanmalıdır.'
   }
 ];

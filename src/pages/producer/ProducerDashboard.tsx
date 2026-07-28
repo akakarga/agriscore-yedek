@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router';
 import { producers, opportunities } from '../../data/seedData';
 import { calculateAgriScore } from '../../services/scoreEngine';
 import { calculateForecast } from '../../services/forecastEngine';
@@ -38,7 +38,19 @@ const ProducerDashboard = () => {
   }
 
   const { producer, score, forecast, scenarioResult, opportunityMatches } = data;
-  const formatCurrency = (val: number) => new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY', maximumFractionDigits: 0 }).format(val);
+  const formatCurrency = (val: number | null) => val === null
+    ? 'Bilinmiyor'
+    : new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY', maximumFractionDigits: 0 }).format(val);
+  const currentPaymentCapacity = producer.financials.currentLoanInstallments === null
+    ? 'veri tamamlanmalı'
+    : score.currentDscr === null
+      ? 'kayıtlı taksit yok'
+      : score.currentDscr.toFixed(2);
+  const scenarioPaymentCapacity = scenarioResult.newDscr === null
+    ? 'veri tamamlanmalı'
+    : scenarioResult.newDscr === 999
+      ? 'kayıtlı taksit yok'
+      : scenarioResult.newDscr.toFixed(2);
 
   const getActiveTab = () => {
     if (location.pathname.includes('/home')) return 'overview';
@@ -55,35 +67,35 @@ const ProducerDashboard = () => {
   return (
     <div className="space-y-6">
       {/* Top Banner specific to Producer */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm p-5 flex flex-col md:flex-row md:items-center justify-between gap-5">
         <div>
-          <h2 className="text-xl font-bold text-slate-800">Hoş Geldiniz, {producer.name}</h2>
-          <p className="text-sm text-slate-500 mt-1">{producer.location} • {producer.businessType} • Veri Güvenilirliği Skoru: %{score.reliabilityResult.score}</p>
+          <h2 className="text-xl font-bold text-fin-900">Hoş Geldiniz, {producer.name}</h2>
+          <p className="text-xs text-slate-500 mt-1">{producer.location} • {producer.businessType} • Veri Güvenilirliği Skoru: %{score.reliabilityResult.score}</p>
         </div>
         <div className="flex gap-4">
            <div className="text-right">
-             <div className="text-xs text-slate-500">Sağmal Hayvan</div>
-             <div className="font-bold text-slate-700">{producer.herd.milkingCows} Baş</div>
+             <div className="text-[11px] text-slate-500 font-medium">Sağmal Hayvan</div>
+             <div className="font-bold text-fin-900 text-sm">{producer.herd.milkingCows} Baş</div>
            </div>
            <div className="w-px bg-slate-200"></div>
            <div className="text-right">
-             <div className="text-xs text-slate-500">Aylık Tahmini Üretim</div>
-             <div className="font-bold text-slate-700">{formatCurrency(producer.financials.monthlyMilkRevenue)}</div>
+             <div className="text-[11px] text-slate-500 font-medium">Aylık Süt Geliri</div>
+             <div className="font-bold text-fin-900 text-sm">{formatCurrency(producer.financials.monthlyMilkRevenue)}</div>
            </div>
         </div>
       </div>
 
       {activeTab === 'overview' && (
-        <div className="tour-producer-overview grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-            <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center">
-              <Activity className="w-5 h-5 mr-2 text-agri-600" />
+        <div className="tour-producer-overview grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div className="bg-white p-5 rounded-xl border border-slate-200/80 shadow-sm">
+            <h3 className="text-base font-bold text-fin-900 mb-3 flex items-center">
+              <Activity className="w-4 h-4 mr-2 text-agri-600" />
               Çiftlik Genel Performansı
             </h3>
-            <p className="text-sm text-slate-600 mb-4 leading-relaxed">
-              Bu tablo, işletmenizin üretim, finansal ve operasyonel verilerine dayanarak oluşturulan deterministik risk ve kapasite özetidir.
+            <p className="text-xs text-slate-600 mb-4 leading-relaxed">
+              Bu tablo, işletmenizin üretim, finansal ve operasyonel kayıtlarından oluşturulan risk ve kapasite özetidir.
             </p>
-            <div className="space-y-4">
+            <div className="space-y-3.5">
                 {[
                   { label: 'Üretim İstikrarı', value: score.subScores.productionStability },
                   { label: 'Nakit Akışı Gücü', value: score.subScores.cashflowStrength },
@@ -93,48 +105,104 @@ const ProducerDashboard = () => {
                   { label: 'Operasyonel Hazırlık', value: score.subScores.operationalRisk },
                 ].map((item, idx) => (
                   <div key={idx}>
-                    <div className="flex justify-between text-sm mb-1">
+                    <div className="flex justify-between text-xs mb-1">
                       <span className="text-slate-600 font-medium">{item.label}</span>
-                      <span className="text-slate-800 font-bold">{item.value.toFixed(1)} / 100</span>
+                      <span className="text-slate-800 font-bold">
+                        {item.value === null ? '—' : `${item.value.toFixed(1)} / 100`}
+                      </span>
                     </div>
-                    <div className="w-full bg-slate-100 rounded-full h-2">
-                      <div className={`h-2 rounded-full ${item.value >= 75 ? 'bg-green-500' : item.value >= 50 ? 'bg-yellow-500' : 'bg-red-500'}`} style={{ width: `${item.value}%` }}></div>
+                    <div className="w-full bg-slate-100 rounded-full h-1.5">
+                      <div
+                        className={`h-1.5 rounded-full ${item.value === null ? 'bg-slate-300' : item.value >= 75 ? 'bg-green-500' : item.value >= 50 ? 'bg-yellow-500' : 'bg-red-500'}`}
+                        style={{ width: `${item.value ?? 0}%` }}
+                      ></div>
                     </div>
                   </div>
                 ))}
             </div>
           </div>
           
-          <div className="tour-producer-trust bg-white p-6 rounded-xl border border-slate-200 shadow-sm relative overflow-hidden">
-            <div className="absolute top-0 right-0 bg-blue-100 text-blue-800 text-[10px] font-bold px-2 py-1 rounded-bl-lg">ŞEFFAFLIK</div>
-            <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center">
-              <ShieldAlert className="w-5 h-5 mr-2 text-orange-500" />
-              Veri Güven Merkezi
-            </h3>
-            <p className="text-sm text-slate-600 mb-4 leading-relaxed">
-              Veri güvenilirliğiniz: <strong>%{score.reliabilityResult.score}</strong>. Finansman başvurularında belgelerinizin tam ve güncel olması karar sürecini hızlandırır.
-            </p>
-            <div className="space-y-3">
-              {score.reliabilityResult.missingData.length > 0 ? (
-                score.reliabilityResult.missingData.map((missing, idx) => (
-                  <div key={idx} className="flex items-start text-sm text-orange-700 bg-orange-50 p-3 rounded border border-orange-100">
-                    <AlertTriangle className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
-                    <span>{missing}</span>
+          <div className="tour-producer-trust bg-white p-5 rounded-xl border border-slate-200/80 shadow-sm relative overflow-hidden flex flex-col justify-between">
+            <div className="absolute top-0 right-0 bg-blue-100 text-blue-800 text-[10px] font-bold px-2 py-0.5 rounded-bl-lg">ŞEFFAFLIK</div>
+            <div>
+              <h3 className="text-base font-bold text-fin-900 mb-3 flex items-center">
+                <ShieldAlert className="w-4 h-4 mr-2 text-orange-500" />
+                Veri Güven Merkezi
+              </h3>
+              <p className="text-xs text-slate-600 mb-4 leading-relaxed">
+                Veri güvenilirliğiniz: <strong>%{score.reliabilityResult.score}</strong>. Finansman başvurularında belgelerinizin tam ve güncel olması karar sürecini hızlandırır.
+              </p>
+              <div className="space-y-2.5">
+                {score.reliabilityResult.missingData.length > 0 ? (
+                  score.reliabilityResult.missingData.map((missing, idx) => (
+                    <div key={idx} className="flex items-start text-xs text-orange-800 bg-orange-50/90 p-3 rounded-lg border border-orange-200/60">
+                      <AlertTriangle className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0 text-orange-600" />
+                      <span>{missing}</span>
+                    </div>
+                  ))
+                ) : (
+                  <div className="flex items-start text-xs text-green-800 bg-green-50/90 p-3 rounded-lg border border-green-200/60">
+                    <CheckCircle className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0 text-green-600" />
+                    <span>Kayıtlı veri eksiğiniz bulunmamaktadır.</span>
                   </div>
-                ))
-              ) : (
-                <div className="flex items-start text-sm text-green-700 bg-green-50 p-3 rounded border border-green-100">
-                  <CheckCircle className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
-                  <span>Kayıtlı veri eksiğiniz bulunmamaktadır.</span>
-                </div>
-              )}
+                )}
+              </div>
             </div>
             
-            <div className="mt-6 pt-4 border-t border-slate-100">
-              <button className="text-sm font-medium text-slate-600 hover:text-fin-700 underline flex items-center">
-                <FileText className="w-4 h-4 mr-1" />
-                Verilerimde Hata Var / İtiraz Et (Veri Düzeltme Akışı)
+            <div className="mt-5 pt-3.5 border-t border-slate-100 flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() => navigate('/producer/documents')}
+                className="text-xs font-bold text-slate-600 hover:text-fin-700 underline flex items-center"
+              >
+                <FileText className="w-3.5 h-3.5 mr-1" />
+                Belgelerimi Kontrol Et
               </button>
+            </div>
+          </div>
+
+          {/* Action Guide for Boosting Score */}
+          <div className="col-span-1 md:col-span-2 bg-gradient-to-r from-agri-900 to-fin-900 text-white p-5 rounded-xl border border-agri-700/50 shadow-md">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+              <div>
+                <div className="text-xs font-bold text-agri-300 uppercase tracking-widest flex items-center">
+                  <Target className="w-4 h-4 mr-1.5" /> Skor Yükseltme Rehberi
+                </div>
+                <h3 className="text-lg font-extrabold mt-1">Skorunuzu Yükseltecek 3 Kolay Adım</h3>
+                <p className="text-xs text-agri-100/90 mt-0.5">Bu adımları tamamlayarak finansman başvuru onay gücünüzü artırabilirsiniz.</p>
+              </div>
+              <span className="bg-agri-500/30 border border-agri-400/30 text-agri-200 text-xs font-bold px-3 py-1 rounded-full self-start sm:self-center">
+                Potansiyel: +25 Puan
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 mt-2">
+              <div className="bg-white/10 backdrop-blur-xs border border-white/10 rounded-lg p-3.5 flex items-start gap-3">
+                <div className="bg-agri-500 text-fin-900 w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs flex-shrink-0 mt-0.5">1</div>
+                <div>
+                  <div className="text-xs font-bold text-white">ÇKS Belgenizi Yenileyin</div>
+                  <div className="text-[11px] text-agri-100/80 mt-1">Son yıla ait ÇKS kaydını PDF olarak yükleyerek üretici doğruluğunu tam yapın.</div>
+                  <div className="text-[11px] font-bold text-agri-300 mt-2">+10 Skor Katkısı</div>
+                </div>
+              </div>
+
+              <div className="bg-white/10 backdrop-blur-xs border border-white/10 rounded-lg p-3.5 flex items-start gap-3">
+                <div className="bg-agri-500 text-fin-900 w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs flex-shrink-0 mt-0.5">2</div>
+                <div>
+                  <div className="text-xs font-bold text-white">Son Süt Makbuzunu Ekleyin</div>
+                  <div className="text-[11px] text-agri-100/80 mt-1">Kooperatif veya süt birliği aylık müstahsil makbuzunu ekleyip nakit akışını güçlendirin.</div>
+                  <div className="text-[11px] font-bold text-agri-300 mt-2">+8 Skor Katkısı</div>
+                </div>
+              </div>
+
+              <div className="bg-white/10 backdrop-blur-xs border border-white/10 rounded-lg p-3.5 flex items-start gap-3">
+                <div className="bg-agri-500 text-fin-900 w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs flex-shrink-0 mt-0.5">3</div>
+                <div>
+                  <div className="text-xs font-bold text-white">TARSİM Sigortası Bildirin</div>
+                  <div className="text-[11px] text-agri-100/80 mt-1">Aktif hayvan hayat veya ürün sigortası poliçenizi sisteme işleyin.</div>
+                  <div className="text-[11px] font-bold text-agri-300 mt-2">+7 Skor Katkısı</div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -148,10 +216,10 @@ const ProducerDashboard = () => {
               Süt Üretim Geçmişi ve Verim Tahmini
             </h3>
             <p className="text-sm text-slate-600 mb-6">
-              Önümüzdeki 6 ay için deterministik kapasite ve trend odaklı üretim tahminleri.
+              Önümüzdeki 6 ay için kapasite ve trend odaklı üretim tahminleri.
             </p>
             <div className="h-80 w-full">
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
                 <LineChart data={forecast.predictions}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                   <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} dy={10} />
@@ -177,7 +245,7 @@ const ProducerDashboard = () => {
                   <PieChartIcon className="w-5 h-5 mr-2 text-agri-600" />
                   Nakit Akışı ve Stres Testi
                 </h3>
-                <p className="text-sm text-slate-500 mt-1">Borç ödeme kapasitesi (DSCR) ve senaryo simülasyonları.</p>
+                <p className="text-sm text-slate-500 mt-1">Borç ödeme görünümü ve değişen koşulların etkisi.</p>
               </div>
               <select 
                 className="mt-4 md:mt-0 p-2 border border-slate-300 rounded-lg text-sm bg-slate-50 text-slate-700 outline-none focus:ring-2 focus:ring-agri-500"
@@ -185,9 +253,9 @@ const ProducerDashboard = () => {
                 onChange={(e) => setActiveScenario(e.target.value as ScenarioType)}
               >
                 <option value="Mevcut Durum">Mevcut Durum</option>
-                <option value="Süt Fiyatı %10 Düşerse">Senaryo: Süt Fiyatı %10 Düşerse</option>
-                <option value="Yem Maliyeti %15 Artarsa">Senaryo: Yem Maliyeti %15 Artarsa</option>
-                <option value="Yeni Kredi Taksiti Eklenirse">Senaryo: Yeni Kredi Taksiti Eklenirse</option>
+                <option value="Süt Fiyatı %10 Düşerse">Süt Fiyatı %10 Düşerse</option>
+                <option value="Yem Maliyeti %15 Artarsa">Yem Maliyeti %15 Artarsa</option>
+                <option value="Yeni Kredi Taksiti Eklenirse">Yeni Kredi Taksiti Eklenirse</option>
               </select>
             </div>
 
@@ -203,30 +271,30 @@ const ProducerDashboard = () => {
                 </div>
                 <div className="flex justify-between items-center p-4 bg-slate-50 rounded-lg border border-slate-200">
                   <span className="font-bold text-slate-800">Net Nakit Akışı</span>
-                  <span className={`font-bold text-lg ${scenarioResult.newNetCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  <span className={`font-bold text-lg ${scenarioResult.newNetCashFlow === null ? 'text-slate-500' : scenarioResult.newNetCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                     {formatCurrency(scenarioResult.newNetCashFlow)}
                   </span>
                 </div>
               </div>
 
               <div>
-                <h4 className="text-sm font-bold text-slate-700 mb-3 text-center">Borç Ödeme Kapasitesi (DSCR) Etkisi</h4>
+                <h4 className="text-sm font-bold text-slate-700 mb-3 text-center">Borç Ödeme Görünümü</h4>
                 <div className="h-48">
-                  <ResponsiveContainer width="100%" height="100%">
+                  <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
                     <BarChart data={[
-                      { name: 'Mevcut', dscr: score.subScores.debtBurden / 100 * 2.5 }, // approx calculation for baseline dscr visually
-                      { name: 'Senaryo', dscr: scenarioResult.newDscr }
+                      { name: 'Mevcut', paymentCapacity: score.currentDscr },
+                      { name: 'Değişen koşul', paymentCapacity: scenarioResult.newDscr === 999 ? null : scenarioResult.newDscr }
                     ]}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} />
                       <XAxis dataKey="name" tick={{fontSize: 12}} />
                       <YAxis tick={{fontSize: 12}} />
                       <RechartsTooltip />
-                      <Bar dataKey="dscr" fill="#0ea5e9" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="paymentCapacity" name="Ödeme kapasitesi" fill="#0ea5e9" radius={[4, 4, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
                 <div className="mt-4 p-3 bg-slate-50 border border-slate-200 rounded text-sm text-slate-600 text-center">
-                  DSCR oranınız 1.25'in üzerindeyse işletmeniz borç ödeme konusunda dirençli kabul edilir. (Mevcut Skor: {score.subScores.debtBurden.toFixed(2)} | Senaryo DSCR: {scenarioResult.newDscr.toFixed(2)})
+                  1,25 üzeri ödeme kapasitesi korumalı aralıktır. Mevcut durum: {currentPaymentCapacity} | Değişen koşul: {scenarioPaymentCapacity}
                 </div>
               </div>
             </div>
@@ -278,7 +346,7 @@ const ProducerDashboard = () => {
             <GraduationCap className="w-5 h-5 mr-2 text-agri-600" />
             İşletmenize Uygun Destek ve Hibeler
           </h3>
-          <p className="text-sm text-slate-500 mb-6">İşletmenizin profiline göre otomatik eşleştirilen fırsatlar. Kesin hibe garantisi içermez, bilgi amaçlıdır.</p>
+          <p className="text-sm text-slate-500 mb-6">İşletme kayıtlarınızla eşleşen örnek destekler. Kesin uygunluk veya hibe garantisi içermez.</p>
           
           <div className="space-y-4">
             {opportunityMatches.map((match, idx) => (
@@ -310,7 +378,7 @@ const ProducerDashboard = () => {
             Finansman Başvurusu Hazırlık Rehberi
           </h3>
           <p className="text-sm text-slate-600 mb-6 leading-relaxed">
-            Kurumlarla yapacağınız finansman görüşmelerine hazırlık yapabilmeniz için sistem tarafından üretilen durum özetiniz.
+            Kurumlarla yapacağınız finansman görüşmelerine hazırlanmanıza yardımcı olan durum özeti.
           </p>
 
           <div className="space-y-6">
@@ -320,7 +388,7 @@ const ProducerDashboard = () => {
                 Güçlü Yönleriniz
               </h4>
               <ul className="list-disc list-inside text-sm text-blue-800 space-y-1">
-                {producer.riskNotes.map((note, i) => (
+                {score.positiveSignals.map((note, i) => (
                   <li key={i}>{note}</li>
                 ))}
               </ul>
@@ -351,7 +419,7 @@ const ProducerDashboard = () => {
               <p className="text-sm text-purple-800">
                 {producer.dataSources.some(ds => ds.name.includes('TARSİM')) 
                   ? 'Aktif poliçe kaydınız tespit edilmiştir. Bu durum olası afet risklerine karşı işletmenizin dayanıklılığını artırarak karar destek skoru üzerinde pozitif etki sağlar.'
-                  : 'Sistemde aktif bir tarım/hayvan hayat sigortası (TARSİM vb.) poliçeniz bulunamamıştır. Poliçe eklemek risk değerlendirmesinde avantaj sağlayabilir.'}
+                  : 'Kayıtlarda aktif bir tarım veya hayvan hayat sigortası poliçesi bulunamadı. Poliçe eklemek risk değerlendirmesinde avantaj sağlayabilir.'}
               </p>
             </div>
           </div>

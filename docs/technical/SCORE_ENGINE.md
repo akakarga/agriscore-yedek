@@ -1,23 +1,69 @@
-# AgriScore AI - Scoring Engine Architecture
+# AgriScore rules-v2.0
 
-## Genel BakÄ±ÅŸ
-AgriScore Scoring Engine, Ã§iftlik ve iÅŸletme verilerini alarak 6 temel finansal ve operasyonel faktÃ¶r Ã¼zerinden aÄŸÄ±rlÄ±klÄ± bir kredi risk skoru Ã¼retir. Sistem deterministik algoritmalarla Ã§alÄ±ÅŸÄ±r ve kara kutu AI yerine aÃ§Ä±klanabilir matematiksel bir model kullanÄ±r.
+## Amaç
 
-## Alt FaktÃ¶rler ve AÄŸÄ±rlÄ±klar
-Model aÅŸaÄŸÄ±daki 6 faktÃ¶rÃ¼ deÄŸerlendirir:
-1. **Ãœretim Ä°stikrarÄ± (Production Stability) - %25:** GeÃ§miÅŸ 6 aydaki sÃ¼t Ã¼retim hacminin standart sapmasÄ± ve trend Ã§izgisi incelenir.
-2. **Nakit AkÄ±ÅŸÄ± GÃ¼cÃ¼ (Cashflow Strength) - %25:** SÃ¼t geliri ile yem ve diÄŸer operasyonel giderler arasÄ±ndaki pozitif marj (DSCR ve operasyonel marj).
-3. **SÃ¼rÃ¼ GÃ¼cÃ¼ (Herd Strength) - %20:** SÃ¼rÃ¼ yapÄ±sÄ±ndaki saÄŸmal inek oranÄ±, dÃ¼ve/genÃ§ hayvan yenileme kapasitesi.
-4. **BorÃ§ YÃ¼kÃ¼ (Debt Burden) - %15 (Ters OrantÄ±lÄ±):** Mevcut finansal yÃ¼kÃ¼mlÃ¼lÃ¼kler ve yeni kredi talebinin mevcut nakit akÄ±ÅŸÄ±na oranÄ±.
-5. **Gelir DÃ¼zenliliÄŸi (Income Regularity) - %10:** Ã–demelerin ve nakit giriÅŸlerinin dÃ¼zenliliÄŸi. (Fatura ve veri sÃ¼rekliliÄŸi)
-6. **Operasyonel Risk (Operational Risk) - %5 (Ters OrantÄ±lÄ±):** BÃ¶lgesel hastalÄ±klar, iklim riskleri ve iÅŸletme Ã¶lÃ§eÄŸine baÄŸlÄ± yapÄ±sal riskler.
+Motor kredi kararı vermez. Sentetik veya ileride doğrulanmış üretici girdilerini açıklanabilir bir 0-100 karar destek skoruna dönüştürür.
 
-## Veri GÃ¼venilirliÄŸi (Reliability Penalty)
-Matematiksel model sonucu Ã§Ä±kan ham skor, "Veri GÃ¼venilirlik" bileÅŸeni ile Ã§arpÄ±lÄ±r.
-EÄŸer Ã¼reticinin saÄŸladÄ±ÄŸÄ± veriler (fatura, resmi kayÄ±t vb.) eksikse, skor %20'ye varan bir "gÃ¼venilirlik cezasÄ±" alÄ±r.
+Kanonik implementasyonlar:
 
-## GÃ¼venli Taksit Kapasitesi
-Mevcut net nakit akÄ±ÅŸÄ± hesaplanÄ±r ve bu akÄ±ÅŸÄ±n maksimum %60-70'i aylÄ±k Ã¶denebilecek "GÃ¼venli Taksit Kapasitesi" (DSCR > 1.25 olacak ÅŸekilde) olarak Ã¶nerilir.
+- Frontend: `src/services/scoreEngine.ts`
+- Backend: `backend/main.py`
 
-## Yasal UyarÄ±
-Bu motor yalnÄ±zca karar destek aracÄ±dÄ±r, kesin onay mekanizmasÄ± DEÄÄ°LDÄ°R. Karar kuruma aittir.
+## Ağırlıklar
+
+| Bileşen | Ağırlık |
+|---|---:|
+| Üretim istikrarı | %20 |
+| Nakit akışı gücü | %20 |
+| Sürü gücü | %15 |
+| Borç yükü | %15 |
+| Gelir düzenliliği | %15 |
+| Operasyonel risk | %15 |
+
+Toplam: %100.
+
+## Veri güvenilirliği cezası
+
+- Güvenilirlik `< 50`: toplam skor `0,60` ile çarpılır.
+- Güvenilirlik `< 80`: toplam skor `0,90` ile çarpılır.
+- Aksi halde ceza yoktur.
+
+Bu bir “eksik puan kadar düşürme” değildir.
+
+## Risk sınıfları
+
+- 75-100: Düşük
+- 50-74: Orta
+- 0-49: Yüksek
+
+## DSCR ve yeni taksit aralığı
+
+İşletme geliri:
+
+```text
+aylık süt geliri - yem gideri - diğer giderler
+```
+
+Mevcut DSCR:
+
+```text
+işletme geliri / mevcut aylık taksit
+```
+
+Yeni taksit kapasitesi, mevcut taksitler sonrası toplam borç servisinin en az 1,25 DSCR koruması hedefiyle hesaplanır:
+
+```text
+alt sınır = max(0, işletme geliri / 1,50 - mevcut taksit)
+üst sınır = max(alt sınır, işletme geliri / 1,25 - mevcut taksit)
+```
+
+Bu aralık kredi teklifi değildir; faiz, vade, teminat, vergiler ve kurum politikası ayrıca değerlendirilmelidir.
+
+## Bilinen sınırlamalar
+
+- Gerçek temerrüt etiketiyle kalibre edilmemiştir.
+- Bölgesel fiyat, mevsim, teminat ve makro şoklar ana skora otomatik girmez.
+- Risk notları anahtar kelime kurallarıyla işlenir.
+- Bileşen eşikleri uzman/pilot doğrulaması gerektirir.
+
+Model kartı ve gerçek veri kalibrasyonu tamamlanmadan “doğruluk oranı” iddiası yapılamaz.
