@@ -28,6 +28,13 @@ export function getLocalCopilotReply(
 ): LocalCopilotResponse {
   const normalizedMessage = message.toLocaleLowerCase('tr-TR');
 
+  if (includesAny(normalizedMessage, ['selam', 'merhaba', 'nasılsın', 'nasilsin', 'günaydın', 'gunaydin', 'iyi günler', 'iyi gunler', 'kimsin', 'sa', 'nood'])) {
+    return {
+      mode: 'local_deterministic',
+      text: 'Selamlar! İyiyim, çok teşekkür ederim. Ben AgriScore Karar Destek Asistanıyım. İşletmenizin üretim istikrarı, nakit akışı, risk durumları veya ÇKS belgeleri hakkında merak ettiğiniz her konuda yardımcı olmaya hazırım. Nasıl yardımcı olabilirim?',
+    };
+  }
+
   if (!context) {
     return {
       mode: 'local_deterministic',

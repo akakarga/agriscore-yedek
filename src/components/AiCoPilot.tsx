@@ -7,7 +7,7 @@ import { getLocalCopilotReply } from '../services/localCopilot';
 
 type ResponseMode = 'live_llm' | 'local_deterministic';
 
-const LIVE_COPILOT_ENABLED = import.meta.env.VITE_COPILOT_LIVE === 'true';
+const LIVE_COPILOT_ENABLED = import.meta.env.VITE_COPILOT_LIVE !== 'false';
 
 interface ChatMessage {
   role: 'user' | 'ai';
