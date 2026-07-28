@@ -293,11 +293,15 @@ const DecisionRoom = () => {
         <BrainCircuit className="absolute -right-8 -bottom-10 w-56 h-56 text-white/5" />
         <div className="relative z-10">
           <div className="flex flex-wrap items-center gap-2 mb-4">
+            <span className="rounded-full bg-agri-500/25 text-agri-300 border border-agri-400/30 px-3.5 py-1 text-xs font-extrabold tracking-wide flex items-center shadow-xs">
+              <Sparkles className="w-3.5 h-3.5 mr-1.5 text-agri-400 animate-pulse" />
+              ÇOK AJANLI AI ORKESTRASYONU (COUNCIL-V1.0)
+            </span>
             <span className="rounded-full bg-agri-500/20 text-agri-300 border border-agri-400/20 px-3 py-1 text-xs font-bold tracking-wide">
               5 DEĞERLENDİRME ALANI
             </span>
             <span className="rounded-full bg-white/10 text-fin-100 px-3 py-1 text-xs font-bold tracking-wide">
-              3 ADIM
+              3 ADIMLI AKIŞ
             </span>
             <span className="rounded-full bg-white/10 text-fin-100 px-3 py-1 text-xs font-bold tracking-wide">
               1 KAYITLI ÖZET
